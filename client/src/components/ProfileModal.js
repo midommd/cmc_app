@@ -20,7 +20,7 @@ export default function ProfileModal({ user, token, onClose, onUpdateUser }) {
     e.preventDefault();
     try {
       const res = await axios.put(
-        'http://localhost:5000/api/auth/update', 
+        '/api/auth/update', 
         formData, 
         { headers: { 'x-auth-token': token } }
       );

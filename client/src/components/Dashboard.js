@@ -14,11 +14,11 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
   // --- 1. CHARGEMENT DES DONNÉES ---
   const refreshData = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/slots', { headers: { 'x-auth-token': token } });
+      const res = await axios.get('/api/slots', { headers: { 'x-auth-token': token } });
       setSlots(res.data);
 
       if(user.role === 'admin') {
-        const statsRes = await axios.get('http://localhost:5000/api/admin/stats', { headers: { 'x-auth-token': token } });
+        const statsRes = await axios.get('/api/admin/stats', { headers: { 'x-auth-token': token } });
         setStats(statsRes.data);
       }
     } catch (err) { 
@@ -32,7 +32,7 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
   // --- 2. ACTION : S'INSCRIRE / ANNULER ---
   const handleToggle = async (slotId) => {
     try {
-      await axios.post('http://localhost:5000/api/slots/toggle', { slotId }, { headers: { 'x-auth-token': token } });
+      await axios.post('/api/slots/toggle', { slotId }, { headers: { 'x-auth-token': token } });
       toast.success("Mise à jour réussie");
       refreshData();
     } catch (err) { 
@@ -50,7 +50,7 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
       const loadToast = toast.loading("Traitement en cours...");
       try {
         const response = await axios.post(
-          'http://localhost:5000/api/admin/export-reset', 
+          '/api/admin/export-reset', 
           {}, 
           { 
             headers: { 'x-auth-token': token },
