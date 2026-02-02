@@ -1,0 +1,286 @@
+/* --- 1. CONFIGURATION GLOBALE & VARIABLES --- */
+:root {
+  --primary: #2563eb;       /* Bleu moderne */
+  --primary-dark: #1e40af;
+  --success: #10b981;       /* Vert */
+  --success-bg: #d1fae5;
+  --danger: #ef4444;        /* Rouge */
+  --danger-bg: #fee2e2;
+  --bg-gradient: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --radius: 16px;
+}
+
+* {
+  box-sizing: border-box; /* Indispensable pour ne pas casser le layout */
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg-gradient);
+  color: #1e293b;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- 2. LOGIN PAGE (Centrée et élégante) --- */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('./assets/img/cmc.jpeg');
+  background-size: cover;
+  background-position: center;
+}
+
+.login-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 2.5rem;
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 1rem;
+  outline: none;
+  transition: 0.3s;
+}
+
+.login-card input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.login-card button {
+  width: 100%;
+  padding: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: transform 0.2s;
+}
+
+.login-card button:active { transform: scale(0.98); }
+
+/* --- 3. DASHBOARD LAYOUT --- */
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  padding-bottom: 100px; /* Espace pour le scroll mobile */
+}
+
+/* HEADER (Navigation) */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--glass-bg);
+  padding: 1rem 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: var(--glass-border);
+  margin-bottom: 2rem;
+  position: sticky; /* Reste en haut quand on scroll */
+  top: 10px;
+  z-index: 50;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* BOUTONS D'ACTION GÉNÉRAUX */
+.action-btn {
+  border: none;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  justify-content: center;
+}
+
+.action-btn:active { transform: scale(0.95); }
+
+/* --- 4. STATS ADMIN --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid white;
+}
+
+/* --- 5. GRILLE CALENDRIER (C'est ici que la magie opère) --- */
+.grid-week {
+  display: grid;
+  /* PAR DÉFAUT (PC) : 5 Colonnes égales */
+  grid-template-columns: repeat(5, 1fr); 
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.day-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.day-header {
+  text-align: center;
+  font-weight: 900;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 0.85rem;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 10px;
+}
+
+/* --- 6. CARTE CRÉNEAU (SLOT) --- */
+.slot-card {
+  background: white;
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+/* États des cartes */
+.slot-card.active { border: 2px solid var(--primary); background: #f0f9ff; }
+.slot-card.full { background: #fef2f2; border-color: #fecaca; }
+.slot-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+
+/* Liste des Avatars */
+.avatars {
+  display: flex;
+  margin: 12px 0;
+  padding-left: 10px;
+  min-height: 32px;
+}
+
+.avatar-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #334155;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border: 2px solid white;
+  margin-left: -12px; /* Chevauchement */
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Boutons dans les cartes */
+.slot-card button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.btn-join { background: var(--success-bg); color: #065f46; border: none; font-weight: bold; cursor: pointer; }
+.btn-leave { background: var(--danger-bg); color: #991b1b; border: none; font-weight: bold; cursor: pointer; }
+.btn-full { background: #f1f5f9; color: #94a3b8; border: none; cursor: not-allowed; }
+
+/* =========================================
+   --- 7. MOBILE RESPONSIVE (CRUCIAL) ---
+   ========================================= */
+
+@media (max-width: 1024px) {
+  /* Tablette : on passe à 3 colonnes pour garder de la place */
+  .grid-week {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  /* --- TÉLÉPHONE (Portrait) --- */
+  
+  .dashboard-container { padding: 15px; }
+
+  /* Le Header passe en colonne (L'utilisateur au dessus, boutons en dessous) */
+  .top-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .top-nav div:first-child { width: 100%; } /* Info utilisateur */
+  .top-nav div:last-child { width: 100%; justify-content: space-between; } /* Boutons */
+  
+  .action-btn { flex: 1; justify-content: center; padding: 12px; } /* Gros boutons tactiles */
+
+  /* --- LE CALENDRIER DEVIENT UNE LISTE --- */
+  .grid-week {
+    grid-template-columns: 1fr; /* 1 Seule colonne */
+    gap: 2.5rem; /* Plus d'espace entre les jours */
+  }
+
+  .day-header {
+    background: #e2e8f0;
+    padding: 10px;
+    border-radius: 8px;
+    color: #334155;
+    border: none;
+    font-size: 1.1rem; /* Plus gros pour lire */
+    position: sticky; /* Le jour reste collé en haut quand on scroll dans le jour */
+    top: 85px; /* Juste en dessous du header principal */
+    z-index: 40;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .slot-card {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem; /* Plus aéré */
+  }
+  
+  /* Boutons plus gros pour le pouce */
+  .slot-card button {
+    padding: 14px;
+    font-size: 1rem;
+  }
+}

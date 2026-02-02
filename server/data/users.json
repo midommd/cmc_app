@@ -1,0 +1,37 @@
+[
+  {
+    "nom": "Admin",
+    "prenom": "CMC",
+    "email": "admin@cmc.ma",
+    "password": "admin",
+    "role": "admin"
+  },
+  {
+    "nom": "Daifi",
+    "prenom": "Mohammed ElMahdi",
+    "email": "ahmed.alami@cmc.ma",
+    "password": "123",
+    "role": "ambassadeur"
+  },
+  {
+    "nom": "Bennani",
+    "prenom": "Sara",
+    "email": "sara.bennani@cmc.ma",
+    "password": "123",
+    "role": "ambassadeur"
+  },
+    {
+    "nom": "ElFassy",
+    "prenom": "Youssef",
+    "email": "youssef.elfassy@cmc.ma",
+    "password": "123",
+    "role": "ambassadeur"
+  },
+    {
+    "nom": "Hamdouch",
+    "prenom": "Khalid",
+    "email": "khalid.hamdouch@cmc.ma",
+    "password": "123",
+    "role": "ambassadeur"
+  }
+]
