@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogIn, Users, ArrowRight, Activity, Heart, ShieldCheck } from 'lucide-react';
 import './LandingPage.css';
+import cmcImg from '../assets/img/cmc.jpeg';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -93,7 +94,7 @@ export default function LandingPage() {
           transition={{ duration: 1, delay: 0.2 }}
         >
           <motion.img 
-            src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
+            src={cmcImg}
             alt="Ambassadeurs CMC" 
             className="hero-img"
             animate={{ y: [0, -15, 0] }}
