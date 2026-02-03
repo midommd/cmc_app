@@ -1,10 +1,10 @@
 /* --- 1. CONFIGURATION GLOBALE & VARIABLES --- */
 :root {
-  --primary: #2563eb;       /* Bleu moderne */
+  --primary: #2563eb;       
   --primary-dark: #1e40af;
-  --success: #10b981;       /* Vert */
+  --success: #10b981;       
   --success-bg: #d1fae5;
-  --danger: #ef4444;        /* Rouge */
+  --danger: #ef4444;      
   --danger-bg: #fee2e2;
   --bg-gradient: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
   --glass-bg: rgba(255, 255, 255, 0.95);
@@ -14,7 +14,7 @@
 }
 
 * {
-  box-sizing: border-box; /* Indispensable pour ne pas casser le layout */
+  box-sizing: border-box; 
 }
 
 body {
@@ -87,7 +87,7 @@ body {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
-  padding-bottom: 100px; /* Espace pour le scroll mobile */
+  padding-bottom: 100px; 
 }
 
 /* HEADER (Navigation) */
@@ -101,7 +101,7 @@ body {
   box-shadow: var(--shadow);
   border: var(--glass-border);
   margin-bottom: 2rem;
-  position: sticky; /* Reste en haut quand on scroll */
+  position: sticky; 
   top: 10px;
   z-index: 50;
 }
@@ -111,7 +111,6 @@ body {
   gap: 10px;
 }
 
-/* BOUTONS D'ACTION GÉNÉRAUX */
 .action-btn {
   border: none;
   padding: 10px 16px;
@@ -147,7 +146,6 @@ body {
 /* --- 5. GRILLE CALENDRIER (C'est ici que la magie opère) --- */
 .grid-week {
   display: grid;
-  /* PAR DÉFAUT (PC) : 5 Colonnes égales */
   grid-template-columns: repeat(5, 1fr); 
   gap: 1.5rem;
   align-items: start;
@@ -230,33 +228,30 @@ body {
    ========================================= */
 
 @media (max-width: 1024px) {
-  /* Tablette : on passe à 3 colonnes pour garder de la place */
   .grid-week {
     grid-template-columns: repeat(3, 1fr);
   }
 }
 
 @media (max-width: 768px) {
-  /* --- TÉLÉPHONE (Portrait) --- */
   
   .dashboard-container { padding: 15px; }
 
-  /* Le Header passe en colonne (L'utilisateur au dessus, boutons en dessous) */
   .top-nav {
     flex-direction: column;
     align-items: flex-start;
     gap: 15px;
   }
   
-  .top-nav div:first-child { width: 100%; } /* Info utilisateur */
-  .top-nav div:last-child { width: 100%; justify-content: space-between; } /* Boutons */
+  .top-nav div:first-child { width: 100%; } 
+  .top-nav div:last-child { width: 100%; justify-content: space-between; } 
   
-  .action-btn { flex: 1; justify-content: center; padding: 12px; } /* Gros boutons tactiles */
+  .action-btn { flex: 1; justify-content: center; padding: 12px; } 
 
   /* --- LE CALENDRIER DEVIENT UNE LISTE --- */
   .grid-week {
-    grid-template-columns: 1fr; /* 1 Seule colonne */
-    gap: 2.5rem; /* Plus d'espace entre les jours */
+    grid-template-columns: 1fr; 
+    gap: 2.5rem; 
   }
 
   .day-header {
@@ -265,9 +260,9 @@ body {
     border-radius: 8px;
     color: #334155;
     border: none;
-    font-size: 1.1rem; /* Plus gros pour lire */
-    position: sticky; /* Le jour reste collé en haut quand on scroll dans le jour */
-    top: 85px; /* Juste en dessous du header principal */
+    font-size: 1.1rem; 
+    position: sticky;
+    top: 85px; 
     z-index: 40;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
@@ -275,10 +270,9 @@ body {
   .slot-card {
     display: flex;
     flex-direction: column;
-    padding: 1.5rem; /* Plus aéré */
+    padding: 1.5rem; 
   }
   
-  /* Boutons plus gros pour le pouce */
   .slot-card button {
     padding: 14px;
     font-size: 1rem;

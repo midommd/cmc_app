@@ -209,7 +209,7 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
         </motion.div>
       )}
 
-      {/* --- CALENDRIER (Modifié pour afficher les noms complets) --- */}
+      {/* --- CALENDRIER --- */}
       <div className="grid-week">
         {days.map((day, i) => (
           <motion.div
@@ -239,7 +239,6 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                     </span>
                   </div>
 
-                  {/* MODIFICATION ICI : Liste des inscrits avec Noms Complets */}
                   <div className="avatars" style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '35px', marginBottom:'15px' }}>
                     <AnimatePresence>
                       {slot.ambassadors.map(amb => (
@@ -258,12 +257,10 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                             border: '1px solid rgba(0,0,0,0.05)'
                           }}
                         >
-                          {/* Avatar Rond */}
                           <div className="avatar-circle" style={{ width: '28px', height: '28px', fontSize: '0.75rem', margin: 0 }}>
                             {amb.prenom[0]}{amb.nom[0]}
                           </div>
 
-                          {/* Nom Complet */}
                           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
                             <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#334155' }}>
                               {amb.prenom} {amb.nom}

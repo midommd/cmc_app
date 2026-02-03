@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-// AJOUTER Eye et EyeOff
 import { X, Save, Lock, Mail, User as UserIcon, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -13,7 +12,6 @@ export default function ProfileModal({ user, token, onClose, onUpdateUser }) {
     password: ''
   });
 
-  // STATE POUR L'OEIL
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -37,7 +35,7 @@ export default function ProfileModal({ user, token, onClose, onUpdateUser }) {
     <div style={{
       position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
       background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center',
-      backdropFilter: 'blur(5px)' // Petit effet flou derrière le modal
+      backdropFilter: 'blur(5px)' 
     }}>
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }} 
@@ -76,12 +74,11 @@ export default function ProfileModal({ user, token, onClose, onUpdateUser }) {
             />
           </div>
 
-          {/* INPUT PASSWORD AVEC OEIL */}
           <div style={{position:'relative'}}>
             <Lock size={18} color="#94a3b8" style={{position:'absolute', top:'12px', left:'10px'}}/>
             
             <input 
-              type={showPassword ? "text" : "password"} // Dynamique
+              type={showPassword ? "text" : "password"}
               value={formData.password} 
               placeholder="Nouveau mot de passe"
               onChange={e => setFormData({...formData, password: e.target.value})}

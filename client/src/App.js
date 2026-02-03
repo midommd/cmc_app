@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import LandingPage from './components/LandingPage'; // Assure-toi d'avoir créé ce fichier
 import './App.css';
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
-  // On garde l'user en state pour qu'il se mette à jour instantanément
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
@@ -25,25 +26,53 @@ function App() {
     setUser(null);
   };
 
-  // NOUVEAU : Fonction pour mettre à jour l'utilisateur localement après modification
   const handleUserUpdate = (newUser) => {
     localStorage.setItem('user', JSON.stringify(newUser));
     setUser(newUser);
   };
 
+  // --- RENDU AVEC ROUTEUR ---
   return (
-    <div className="App">
-      {!token ? (
-        <Login onLogin={handleLogin} />
-      ) : (
-        <Dashboard 
-          token={token} 
-          user={user} 
-          onLogout={handleLogout} 
-          onUpdateUser={handleUserUpdate} // On passe la fonction au Dashboard
-        />
-      )}
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          
+          {/* 1. ROUTE ACCUEIL (Landing Page) */}
+          {/* Si déjà connecté, on envoie au Dashboard. Sinon, on montre la belle page d'accueil. */}
+          <Route 
+            path="/" 
+            element={token ? <Navigate to="/dashboard" /> : <LandingPage />} 
+          />
+
+          {/* 2. ROUTE LOGIN */}
+          {/* Si déjà connecté, inutile de se relogguer -> Dashboard. Sinon -> Login. */}
+          <Route 
+            path="/login" 
+            element={token ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} 
+          />
+
+          {/* 3. ROUTE DASHBOARD (Protégée) */}
+          {/* Si PAS connecté -> Redirection Login. Sinon -> Dashboard. */}
+          <Route 
+            path="/dashboard" 
+            element={token ? (
+              <Dashboard 
+                token={token} 
+                user={user} 
+                onLogout={handleLogout} 
+                onUpdateUser={handleUserUpdate}
+              />
+            ) : (
+              <Navigate to="/login" />
+            )} 
+          />
+
+          {/* 4. ROUTE PAR DÉFAUT (Si l'utilisateur tape n'importe quoi) */}
+          <Route path="*" element={<Navigate to="/" />} />
+
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

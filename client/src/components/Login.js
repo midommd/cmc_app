@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-// AJOUTER Eye et EyeOff ici
 import { User, Lock, ArrowRight, Loader, Eye, EyeOff } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -9,8 +8,6 @@ export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  // NOUVEAU STATE POUR L'OEIL
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -55,24 +52,20 @@ export default function Login({ onLogin }) {
             />
           </div>
 
-          {/* Champ Mot de passe AVEC TOGGLE */}
           <div style={{ position: 'relative', marginTop: '10px' }}>
             <Lock size={20} color="#94a3b8" style={{ position: 'absolute', top: '50%', left: '15px', transform: 'translateY(-50%)' }} />
             
             <input 
-              // ICI : On change le type dynamiquement
               type={showPassword ? "text" : "password"} 
               placeholder="Mot de passe" 
               value={password} 
               onChange={e => setPassword(e.target.value)} 
-              // Padding à droite aussi pour ne pas écrire sur l'œil
               style={{ paddingLeft: '45px', paddingRight: '45px' }} 
               required 
             />
 
-            {/* L'ICÔNE OEIL (BOUTON CLIQUABLE) */}
             <button
-              type="button" // Important pour ne pas soumettre le formulaire
+              type="button" 
               onClick={() => setShowPassword(!showPassword)}
               style={{
                 position: 'absolute',
@@ -83,8 +76,8 @@ export default function Login({ onLogin }) {
                 border: 'none',
                 cursor: 'pointer',
                 padding: '5px',
-                width: 'auto', // Override du style CSS global des boutons
-                marginTop: 0   // Override
+                width: 'auto', 
+                marginTop: 0   
               }}
             >
               {showPassword ? <EyeOff size={20} color="#64748b" /> : <Eye size={20} color="#64748b" />}
