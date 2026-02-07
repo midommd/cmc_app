@@ -4,21 +4,21 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const ExcelJS = require('exceljs');
-const helmet = require('helmet');               // SÉCURITÉ
-const rateLimit = require('express-rate-limit');// SÉCURITÉ
-const path = require('path');                   // DÉPLOIEMENT
+const helmet = require('helmet');               
+const rateLimit = require('express-rate-limit');
+const path = require('path');                   
 require('dotenv').config();
 
-// Imports des Modèles
 const User = require('./models/User');
 const Slot = require('./models/Slot');
 const History = require('./models/History'); 
 
 const app = express();
+app.set('trust proxy', 1);
 
 // --- 1. CONFIGURATION SÉCURITÉ & MIDDLEWARE ---
-app.use(helmet()); // Protège les en-têtes HTTP
-app.use(cors());   // Gère les accès Cross-Origin
+app.use(helmet()); 
+app.use(cors());   
 app.use(express.json());
 
 // Limiteur de requêtes (Anti-Force Brute)
@@ -28,7 +28,7 @@ const limiter = rateLimit({
   max: 150, 
   message: "Trop de requêtes, veuillez réessayer plus tard."
 });
-app.use('/api/', limiter); // Applique la limite seulement aux routes API
+app.use('/api/', limiter); 
 
 // --- 2. CONNEXION BASE DE DONNÉES ---
 mongoose.connect(process.env.MONGO_URI)
@@ -77,14 +77,12 @@ app.put('/api/auth/update', auth, async (req, res) => {
     let user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: "Utilisateur non trouvé" });
 
-    // Vérifier unicité Email
     if (email && email !== user.email) {
       const emailExists = await User.findOne({ email });
       if (emailExists) return res.status(400).json({ msg: "Cet email est déjà utilisé." });
       user.email = email;
     }
 
-    // Mise à jour mot de passe
     if (password && password.length > 0) {
       if (password.length < 6) return res.status(400).json({ msg: "Mot de passe trop court (min 6)." });
       const salt = await bcrypt.genSalt(10);
@@ -257,3 +255,7 @@ if (process.env.NODE_ENV === 'production') {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Serveur sécurisé prêt sur port ${PORT}`));
+
+module.exports = app;
+
+// EASY PEASY, NON ?😉
