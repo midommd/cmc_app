@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react'; // <--- Added useCallback
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogOut, Shield, Users, CheckCircle, XCircle, Download, Calendar } from 'lucide-react';
@@ -11,8 +11,9 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
   const [showProfile, setShowProfile] = useState(false);
   const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 
-  // --- 1. CHARGEMENT DES DONNÉES ---
-  const refreshData = async () => {
+  // --- 1. CHARGEMENT DES DONNÉES (CORRIGÉ) ---
+  // On utilise useCallback pour stabiliser la fonction et éviter l'erreur de build Vercel
+  const refreshData = useCallback(async () => {
     try {
       const res = await axios.get('/api/slots', { headers: { 'x-auth-token': token } });
       setSlots(res.data);
@@ -25,9 +26,12 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
       console.error(err);
       toast.error("Erreur de connexion au serveur");
     }
-  };
+  }, [token, user.role]); // <--- Dépendances nécessaires pour que React soit content
 
-  useEffect(() => { refreshData(); }, []);
+  // Le useEffect dépend maintenant de la version stable de refreshData
+  useEffect(() => { 
+    refreshData(); 
+  }, [refreshData]);
 
   // --- 2. ACTION : S'INSCRIRE / ANNULER ---
   const handleToggle = async (slotId) => {
