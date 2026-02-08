@@ -14,7 +14,7 @@ const Slot = require('./models/Slot');
 const History = require('./models/History'); 
 
 const app = express();
-app.set('trust proxy', 1);
+
 
 // --- 1. CONFIGURATION SÉCURITÉ & MIDDLEWARE ---
 app.use(helmet()); 
@@ -256,6 +256,5 @@ if (process.env.NODE_ENV === 'production') {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Serveur sécurisé prêt sur port ${PORT}`));
 
-module.exports = app;
 
 // EASY PEASY, NON ?😉
