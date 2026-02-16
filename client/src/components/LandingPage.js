@@ -153,7 +153,7 @@ export default function LandingPage() {
           viewport={{ once: true }}
         >
           <div className="stat-item">
-            <span className="number">12</span>
+            <span className="number">23</span>
             <span className="label">Ambassadeurs</span>
           </div>
           <div className="divider"></div>
