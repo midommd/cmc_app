@@ -14,32 +14,11 @@
     "role": "ambassadeur"
   },
   {
-    "nom": "Bayouni",
-    "prenom": "Fatima Zahra",
-    "email": "fatimazahrabayouni@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
-    "nom": "El Filali",
-    "prenom": "Saad",
-    "email": "saaad.elfilali@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
     "nom": "Bendayra",
     "prenom": "Mouad",
     "email": "mouadbendayra@gmail.com",
     "password": "cmc2023",
     "role": "admin"
-  },
-  {
-    "nom": "Aamer",
-    "prenom": "Ibtissam",
-    "email": "btissamaamer2@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
   },
   {
     "nom": "El Barji",
@@ -49,79 +28,9 @@
     "role": "ambassadeur"
   },
   {
-    "nom": "Bouari",
-    "prenom": "Malak",
-    "email": "malakbouari@icloud.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
-    "nom": "Bouzarbia",
-    "prenom": "Fatima",
-    "email": "bouzarbiaf@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
-    "nom": "Achaoui",
-    "prenom": "Nisrine",
-    "email": "nisrine.achaoui24@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
-    "nom": "El Moumni",
-    "prenom": "Younes",
-    "email": "Younessmomni27@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
-    "nom": "Boudbouch",
-    "prenom": "Farah",
-    "email": "fel97737@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
     "nom": "Guenibar",
     "prenom": "Boutayna",
     "email": "boutaynaguenibar@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-    {
-    "nom": "Elkhatmaoui ",
-    "prenom": "Amira",
-    "email": "elkhatmaouiamira@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-    },
-    {
-    "nom": "Houari Selmani",
-    "prenom": "Bahae Eddine",
-    "email": "bhaaae@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
-    "nom": "Aslimani",
-    "prenom": "Fatima Ezzahera",
-    "email": "ezzaherafatima935@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-   {
-    "nom": "Djedii",
-    "prenom": "Haytam",
-    "email": "Vaytam14@gmail.com",
-    "password": "cmc2023",
-    "role": "ambassadeur"
-  },
-  {
-    "nom": "El Gotbi",
-    "prenom": "Nossaiba",
-    "email": "nossaibaelgotbi583@gmail.com",
     "password": "cmc2023",
     "role": "ambassadeur"
   },
@@ -133,11 +42,48 @@
     "role": "ambassadeur"
   },
   {
-   "nom": "Zagnouni",
-    "prenom": "Aymen",
-    "email": "aymenzagnouni@gmail.com",
+    "nom": "El Gotbi",
+    "prenom": "Nossaiba",
+    "email": "nossaiba.elgotbi@cmc.ma",
     "password": "cmc2023",
-    "role": "ambassadeur" 
-  }
+    "role": "ambassadeur"
+  },
+  {
+    "nom": "Hafri",
+    "prenom": "Sana",
+    "email": "sana.hafri@cmc.ma",
+    "password": "cmc2023",
+    "role": "ambassadeur"
+  },
+  {
+    "nom": "Maddouhi",
+    "prenom": "Abdessamad",
+    "email": "abdessamad.maddouhi@cmc.ma",
+    "password": "cmc2023",
+    "role": "ambassadeur"
+  },
+  {
+    "nom": "Amjad",
+    "prenom": "Zakaria",
+    "email": "zakaria.amjad@cmc.ma",
+    "password": "cmc2023",
+    "role": "ambassadeur"
+  },
   
+  { "nom": "Ejidioui", "prenom": "Inas", "email": "inas.ejidioui@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Mouhib", "prenom": "Mouad", "email": "mouad.mouhib@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Elbaroudi", "prenom": "Douae", "email": "douae.elbaroudi@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "El Kissany", "prenom": "Hafssa", "email": "hafssa.elkissany@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Ritab", "prenom": "El Houssin", "email": "elhoussin.ritab@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Chamli", "prenom": "Yassin", "email": "yassin.chamli@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Bouzarbia", "prenom": "Fatima", "email": "fatima.bouzarbia@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Abdennaoui", "prenom": "Wissale", "email": "wissale.abdennaoui@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Maghzaoui", "prenom": "Ayoub", "email": "ayoub.maghzaoui@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Serwat", "prenom": "Assia", "email": "assia.serwat@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Mamdouh", "prenom": "Widad", "email": "widad.mamdouh@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Essousi", "prenom": "Maria", "email": "maria.essousi@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Bayouni", "prenom": "Fatima Zahra", "email": " fatimazahra.bayouni@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "El Moutasadik", "prenom": "Loubna", "email": "loubna.elmoutasadik@cmc.ma", "password": "cmc2023", "role": "ambassadeur" },
+  { "nom": "Elfaqyr", "prenom": "Hiba", "email": "hiba.elfaqyr@cmc.ma", "password": "cmc2023", "role": "ambassadeur" }
+
 ]

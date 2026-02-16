@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import LandingPage from './components/LandingPage'; // Assure-toi d'avoir créé ce fichier
+import LandingPage from './components/LandingPage';
+import AmbassadorsPage from './components/AmbassadorsPage' // Assure-toi d'avoir créé ce fichier
 import './App.css';
 
 function App() {
@@ -66,6 +67,7 @@ function App() {
               <Navigate to="/login" />
             )} 
           />
+          <Route path="/ambassadors" element={<AmbassadorsPage />} />
 
           {/* 4. ROUTE PAR DÉFAUT (Si l'utilisateur tape n'importe quoi) */}
           <Route path="*" element={<Navigate to="/" />} />

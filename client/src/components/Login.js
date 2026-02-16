@@ -87,6 +87,21 @@ export default function Login({ onLogin }) {
           <button type="submit" disabled={loading} style={styles.button}>
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
+          <div style={{marginTop: '20px', borderTop: '1px solid #eee', paddingTop: '20px'}}>
+            <p style={{marginBottom: '10px', color: '#64748b', fontSize: '0.9rem'}}>Curieux de nous connaître ?</p>
+            <button 
+              type="button" 
+              onClick={() => window.location.href = '/ambassadors'}
+              style={{
+                width: '100%', padding: '12px', background: 'white', 
+                border: '1px solid #2563eb', color: '#2563eb', 
+                borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
+              }}
+            >
+              ✨ Voir nos Ambassadeurs
+            </button>
+          </div>
         </form>
         
         <div style={styles.footer}>

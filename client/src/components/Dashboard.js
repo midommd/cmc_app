@@ -1,18 +1,22 @@
-import React, { useEffect, useState, useCallback } from 'react'; // <--- Added useCallback
+import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Shield, Users, CheckCircle, XCircle, Download, Calendar } from 'lucide-react';
+// AJOUT DE CheckCircle et XCircle ICI
+import { LogOut, Shield, Users, Download, Calendar, Settings, MessageSquare, User, CheckCircle, XCircle } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import ProfileModal from './ProfileModal';
+import AdminUserManagement from './AdminUserManagement';
+import ChatSystem from './ChatSystem';
 
 export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
   const [slots, setSlots] = useState([]);
   const [stats, setStats] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [currentView, setCurrentView] = useState('planning');
+  
   const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 
-  // --- 1. CHARGEMENT DES DONNÉES (CORRIGÉ) ---
-  // On utilise useCallback pour stabiliser la fonction et éviter l'erreur de build Vercel
+  // --- CHARGEMENT DES DONNÉES ---
   const refreshData = useCallback(async () => {
     try {
       const res = await axios.get('/api/slots', { headers: { 'x-auth-token': token } });
@@ -24,284 +28,308 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur de connexion au serveur");
+      toast.error("Erreur connexion serveur");
     }
-  }, [token, user.role]); // <--- Dépendances nécessaires pour que React soit content
+  }, [token, user.role]);
 
-  // Le useEffect dépend maintenant de la version stable de refreshData
-  useEffect(() => { 
-    refreshData(); 
-  }, [refreshData]);
+  useEffect(() => { refreshData(); }, [refreshData]);
 
-  // --- 2. ACTION : S'INSCRIRE / ANNULER ---
+  // --- ACTIONS ---
   const handleToggle = async (slotId) => {
     try {
       await axios.post('/api/slots/toggle', { slotId }, { headers: { 'x-auth-token': token } });
+      // On rafraîchit immédiatement les données pour mettre à jour le bouton
+      await refreshData();
       toast.success("Mise à jour réussie");
-      refreshData();
     } catch (err) {
       toast.error(err.response?.data?.msg || "Erreur");
     }
   };
 
-  // --- 3. ACTION ADMIN : EXPORT & RESET ---
   const handleExportReset = async () => {
-    const confirm = window.confirm(
-      "⚠️ ACTION ADMINISTRATIVE\n\n1. Télécharger le rapport Excel.\n2. Archiver les données.\n3. VIDER le planning pour la semaine prochaine.\n\nConfirmer ?"
-    );
-
-    if (confirm) {
-      const loadToast = toast.loading("Traitement en cours...");
-      try {
-        const response = await axios.post(
-          '/api/admin/export-reset',
-          {},
-          {
-            headers: { 'x-auth-token': token },
-            responseType: 'blob'
-          }
-        );
-
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        const dateStr = new Date().toLocaleDateString('fr-FR').replace(/\//g, '-');
-        link.setAttribute('download', `CMC_Planning_Semaine_${dateStr}.xlsx`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-
-        toast.dismiss(loadToast);
-        toast.success("Semaine clôturée avec succès !");
-        refreshData();
-
-      } catch (err) {
-        console.error(err);
-        toast.dismiss(loadToast);
-        toast.error("Erreur lors de l'export");
-      }
+    if(!window.confirm("⚠️ Attention : Cela va archiver la semaine et vider le planning. Continuer ?")) return;
+    const loadToast = toast.loading("Traitement en cours...");
+    try {
+      const response = await axios.post('/api/admin/export-reset', {}, {
+        headers: { 'x-auth-token': token },
+        responseType: 'blob'
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `CMC_Planning_${new Date().toLocaleDateString()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      toast.dismiss(loadToast);
+      toast.success("Semaine clôturée !");
+      refreshData();
+    } catch (err) {
+      toast.dismiss(loadToast);
+      toast.error("Erreur export");
     }
   };
 
-  const getSlot = (day, periodSearch) => {
-    return slots.find(s => s.day === day && s.period.toLowerCase().includes(periodSearch.toLowerCase()));
-  };
+  const getSlot = (day, periodSearch) => slots.find(s => s.day === day && s.period.toLowerCase().includes(periodSearch.toLowerCase()));
+
+  // --- NAVIGATION ITEM ---
+  const NavItem = ({ id, icon: Icon, label }) => (
+    <button 
+      onClick={() => setCurrentView(id)}
+      style={{
+        ...styles.navItem,
+        color: currentView === id ? '#2563eb' : '#94a3b8',
+        background: currentView === id ? '#eff6ff' : 'transparent',
+      }}
+    >
+      <Icon size={20} />
+      <span className="nav-label" style={styles.navLabel}>{label}</span>
+      {currentView === id && <motion.div layoutId="bubble" style={styles.activeBubble} />}
+    </button>
+  );
 
   return (
-    <div className="dashboard-container">
-      <Toaster position="top-right" />
+    <div style={styles.pageContainer}>
+      <Toaster position="top-center" />
 
-      {/* --- HEADER --- */}
-      <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="top-nav">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ background: user.role === 'admin' ? '#ef4444' : '#2563eb', color: 'white', padding: '10px', borderRadius: '10px' }}>
-            {user.role === 'admin' ? <Shield size={24} /> : <Users size={24} />}
-          </div>
+      {/* --- HEADER DESKTOP --- */}
+      <header className="desktop-only" style={styles.desktopHeader}>
+        <div style={styles.logoSection}>
+          <div style={styles.logoBadge}>{user.role === 'admin' ? <Shield color="white" size={20}/> : <Users color="white" size={20}/>}</div>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Espace {user.role === 'admin' ? 'Administration' : 'Ambassadeur'}</h2>
-            <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>Bonjour, {user.prenom} {user.nom}</p>
+            <h1 style={{fontSize:'1.1rem', fontWeight:'800', margin:0, color:'#1e293b'}}>CMC Connect</h1>
+            <span style={{fontSize:'0.8rem', color:'#64748b'}}>Bonjour, {user.prenom}</span>
           </div>
         </div>
 
-        {/* Boutons Profil et Déconnexion */}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => setShowProfile(true)}
-            className="action-btn"
-            style={{ width: 'auto', background: 'white', border: '1px solid #cbd5e1', color: '#475569' }}
-          >
-            <Users size={18} /> Mon Profil
-          </button>
+        <nav style={styles.desktopNav}>
+          <NavItem id="planning" icon={Calendar} label="Planning" />
+          <NavItem id="chat" icon={MessageSquare} label="Messages" />
+          {user.role === 'admin' && <NavItem id="admin" icon={Settings} label="Admin" />}
+        </nav>
 
-          <button onClick={onLogout} className="action-btn" style={{ width: 'auto', background: '#fee2e2', color: '#991b1b' }}>
-            <LogOut size={18} /> Déconnexion
-          </button>
+        <div style={{display:'flex', gap:'10px'}}>
+          <button onClick={() => setShowProfile(true)} style={styles.iconBtn}><User size={20}/></button>
+          <button onClick={onLogout} style={{...styles.iconBtn, color:'#ef4444', background:'#fef2f2'}}><LogOut size={20}/></button>
         </div>
-      </motion.div>
+      </header>
 
-      {/* --- MODAL PROFIL (Si ouvert) --- */}
-      {showProfile && (
-        <ProfileModal
-          user={user}
-          token={token}
-          onClose={() => setShowProfile(false)}
-          onUpdateUser={onUpdateUser}
-        />
-      )}
+      {/* --- HEADER MOBILE --- */}
+      <header className="mobile-only" style={styles.mobileHeader}>
+        <span style={{fontWeight:'800', fontSize:'1.2rem', color:'#1e293b'}}>CMC Connect</span>
+        <button onClick={() => setShowProfile(true)} style={styles.mobileProfileBtn}>
+           {user.prenom ? user.prenom[0] : 'U'}
+        </button>
+      </header>
 
-      {/* --- SECTION ADMIN (STATS) --- */}
-      {user.role === 'admin' && stats && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="stats-grid">
-
-          <div className="stat-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div>
-              <h3 style={{ margin: 0, color: '#64748b', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <Calendar size={16} /> Total Missions
-              </h3>
-              <p style={{ fontSize: '3rem', margin: '10px 0', fontWeight: 'bold', color: '#2563eb', textAlign: 'center' }}>
-                {stats.total}
-              </p>
-              <p style={{ fontSize: '0.8rem', color: '#94a3b8', textAlign: 'center' }}>Historique + Semaine en cours</p>
-            </div>
-
-            <button
-              onClick={handleExportReset}
-              style={{
-                marginTop: '20px',
-                background: '#e11d48', color: 'white', border: 'none',
-                padding: '12px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold',
-                display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', width: '100%',
-                boxShadow: '0 4px 6px rgba(225, 29, 72, 0.2)'
-              }}
-            >
-              <Download size={18} /> Clôturer Semaine
-            </button>
-          </div>
-
-          <div className="stat-card" style={{ gridColumn: 'span 2', overflow: 'hidden', padding: 0 }}>
-            <div style={{ padding: '15px', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
-              <h3 style={{ margin: 0, color: '#475569', fontSize: '1rem' }}>Performance des Ambassadeurs</h3>
-            </div>
-
-            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                <thead style={{ position: 'sticky', top: 0, background: 'white', zIndex: 10 }}>
-                  <tr style={{ textAlign: 'left', color: '#94a3b8', fontSize: '0.8rem', borderBottom: '2px solid #f1f5f9' }}>
-                    <th style={{ padding: '10px 15px' }}>#</th>
-                    <th style={{ padding: '10px' }}>Ambassadeur</th>
-                    <th style={{ padding: '10px' }}>Email</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Missions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.stats.map((amb, index) => (
-                    <tr key={amb.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '10px 15px', fontWeight: 'bold', color: index < 3 ? '#d97706' : '#64748b' }}>
-                        {index + 1}
-                      </td>
-                      <td style={{ padding: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{
-                            width: '28px', height: '28px', borderRadius: '50%',
-                            background: index === 0 ? '#fcd34d' : '#e2e8f0',
-                            color: index === 0 ? '#92400e' : '#475569',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 'bold'
-                          }}>
-                            {amb.prenom[0]}{amb.nom[0]}
-                          </div>
-                          <span style={{ fontWeight: index === 0 ? 'bold' : 'normal' }}>
-                            {amb.prenom} {amb.nom}
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ padding: '10px', color: '#64748b', fontSize: '0.8rem' }}>{amb.email}</td>
-                      <td style={{ padding: '10px', textAlign: 'center' }}>
-                        <span style={{
-                          background: amb.total > 0 ? '#dcfce7' : '#f1f5f9',
-                          color: amb.total > 0 ? '#166534' : '#94a3b8',
-                          padding: '2px 10px', borderRadius: '12px', fontWeight: 'bold', fontSize: '0.8rem'
-                        }}>
-                          {amb.total}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </motion.div>
-      )}
-
-      {/* --- CALENDRIER --- */}
-      <div className="grid-week">
-        {days.map((day, i) => (
-          <motion.div
-            key={day}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="day-column"
-          >
-            <div className="day-header">{day}</div>
-
-            {['Matin', 'Apr'].map(periodCode => {
-              const slot = getSlot(day, periodCode);
-
-              if (!slot) return <div key={periodCode} className="slot-card" style={{ opacity: 0.5 }}>Chargement...</div>;
-
-              const isFull = slot.ambassadors.length >= 3;
-              const isRegistered = slot.ambassadors.some(a => a._id === user.id);
-              const displayPeriod = periodCode === 'Matin' ? '09:00 - 12:30' : '13:30 - 16:30';
-
-              return (
-                <div key={slot._id} className={`slot-card ${isFull ? 'full' : ''} ${isRegistered ? 'active' : ''}`}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ fontWeight: 'bold', color: '#475569', fontSize: '0.9rem' }}>{displayPeriod}</span>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px', background: isFull ? '#fee2e2' : '#dcfce7', color: isFull ? '#991b1b' : '#166534' }}>
-                      {slot.ambassadors.length}/3
-                    </span>
-                  </div>
-
-                  <div className="avatars" style={{ display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '35px', marginBottom:'15px' }}>
-                    <AnimatePresence>
-                      {slot.ambassadors.map(amb => (
-                        <motion.div
-                          key={amb._id}
-                          initial={{ scale: 0, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          exit={{ scale: 0, opacity: 0 }}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px',
-                            background: 'rgba(255,255,255,0.6)',
-                            padding: '6px',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(0,0,0,0.05)'
-                          }}
-                        >
-                          <div className="avatar-circle" style={{ width: '28px', height: '28px', fontSize: '0.75rem', margin: 0 }}>
-                            {amb.prenom[0]}{amb.nom[0]}
-                          </div>
-
-                          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: '1.2' }}>
-                            <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#334155' }}>
-                              {amb.prenom} {amb.nom}
-                            </span>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                    {slot.ambassadors.length === 0 && <span style={{ fontSize: '0.8rem', color: '#cbd5e1', fontStyle: 'italic', textAlign: 'center' }}>Aucun inscrit</span>}
-                  </div>
-
-                  {user.role === 'ambassadeur' ? (
-                    (!isFull || isRegistered) ? (
-                      <button
-                        onClick={() => handleToggle(slot._id)}
-                        className={`action-btn ${isRegistered ? 'btn-leave' : 'btn-join'}`}
-                      >
-                        {isRegistered ? <><XCircle size={16} /> Annuler</> : <><CheckCircle size={16} /> S'inscrire</>}
-                      </button>
-                    ) : (
-                      <button className="action-btn btn-full" disabled>COMPLET</button>
-                    )
-                  ) : (
-                    <div style={{
-                      marginTop: 'auto', padding: '6px', background: 'rgba(0,0,0,0.03)', color: '#94a3b8',
-                      fontSize: '0.70rem', textAlign: 'center', borderRadius: '4px', fontStyle: 'italic'
-                    }}>
-                      Admin Mode
+      {/* --- MAIN CONTENT --- */}
+      <main style={styles.mainContent}>
+        <AnimatePresence mode="wait">
+          
+          {/* VIEW: PLANNING */}
+          {currentView === 'planning' && (
+            <motion.div key="planning" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} transition={{duration:0.2}}>
+              
+              {/* Stats (Admin) */}
+              {user.role === 'admin' && stats && (
+                <div style={styles.statsContainer}>
+                  <div style={styles.statCardMain}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
+                      <div>
+                        <p style={{margin:0, color:'rgba(255,255,255,0.8)', fontSize:'0.85rem'}}>Missions Totales</p>
+                        <h2 style={{margin:'5px 0', color:'white', fontSize:'2.2rem'}}>{stats.total}</h2>
+                      </div>
+                      <div style={{background:'rgba(255,255,255,0.2)', padding:'8px', borderRadius:'10px'}}><Calendar color="white"/></div>
                     </div>
-                  )}
-
+                    <button onClick={handleExportReset} style={styles.exportBtn}>
+                      <Download size={16}/> Clôturer Semaine
+                    </button>
+                  </div>
+                  
+                  <div style={styles.statCardList}>
+                    <h3 style={{margin:'0 0 10px 0', fontSize:'0.9rem', color:'#475569', fontWeight:'bold'}}>Top Ambassadeurs</h3>
+                    <div style={{overflowY:'auto', maxHeight:'120px'}}>
+                      {stats.stats.map((s, i) => (
+                        <div key={i} style={styles.leaderRow}>
+                          <span style={{fontWeight:'600', color:'#64748b', fontSize:'0.8rem'}}>#{i+1}</span>
+                          <span style={{flex:1, marginLeft:'10px', fontSize:'0.85rem', fontWeight:'500'}}>{s.prenom} {s.nom}</span>
+                          <span style={styles.badge}>{s.total}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              );
-            })}
-          </motion.div>
-        ))}
-      </div>
+              )}
+
+              {/* GRID PLANNING */}
+              <div style={styles.gridContainer}>
+                {days.map((day) => (
+                  <div key={day} style={styles.dayColumn}>
+                    <div style={styles.dayHeader}>
+                      <span style={{fontWeight:'800', color:'#94a3b8', textTransform:'uppercase', fontSize:'0.75rem', letterSpacing:'1px'}}>{day}</span>
+                    </div>
+                    <div style={{display:'flex', flexDirection:'column', gap:'12px'}}>
+                      {['Matin', 'Apr'].map(period => {
+                        const slot = getSlot(day, period);
+                        if (!slot) return <div key={period} style={styles.skeletonSlot}></div>;
+                        
+                        const isFull = slot.ambassadors.length >= 3;
+                        // Vérification robuste
+                        const isRegistered = slot.ambassadors.some(a => (a._id === user.id) || (a._id === user._id));
+                        
+                        return (
+                          <div key={slot._id} style={{
+                            ...styles.slotCard,
+                            borderLeft: isRegistered ? '4px solid #2563eb' : isFull ? '4px solid #ef4444' : '4px solid #10b981'
+                          }}>
+                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
+                              <span style={{fontSize:'0.8rem', fontWeight:'700', color:'#334155'}}>
+                                {period === 'Matin' ? '09:00 - 12:30' : '13:30 - 16:30'}
+                              </span>
+                              <span style={{
+                                fontSize:'0.7rem', padding:'2px 8px', borderRadius:'12px', fontWeight:'700',
+                                background: isFull ? '#fee2e2' : '#d1fae5', color: isFull ? '#b91c1c' : '#047857'
+                              }}>
+                                {slot.ambassadors.length}/3
+                              </span>
+                            </div>
+
+                            {/* Liste des inscrits */}
+                            <div style={{display:'flex', flexDirection:'column', gap:'8px', marginBottom:'15px', minHeight:'30px'}}>
+                              {slot.ambassadors.length === 0 && <span style={{fontSize:'0.75rem', color:'#cbd5e1', fontStyle:'italic'}}>Aucun inscrit</span>}
+                              
+                              {slot.ambassadors.map((amb) => (
+                                <div key={amb._id} style={{display:'flex', alignItems:'center', gap:'8px', fontSize:'0.8rem', color:'#334155', fontWeight:'500'}}>
+                                  {amb.photo ? (
+                                    <img src={amb.photo} style={{width:'22px', height:'22px', borderRadius:'50%', objectFit:'cover', border:'1px solid #e2e8f0'}} alt=""/>
+                                  ) : (
+                                    <div style={{width:'22px', height:'22px', borderRadius:'50%', background:'#f1f5f9', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.65rem', fontWeight:'bold', color:'#64748b'}}>
+                                      {amb.prenom?.[0]}
+                                    </div>
+                                  )}
+                                  <span>{amb.prenom} {amb.nom}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* BOUTON D'ACTION */}
+                            {user.role === 'ambassadeur' && (!isFull || isRegistered) && (
+                              <button 
+                                onClick={() => handleToggle(slot._id)}
+                                style={{
+                                  ...styles.actionBtn,
+                                  background: isRegistered ? '#fee2e2' : '#eff6ff',
+                                  color: isRegistered ? '#ef4444' : '#2563eb',
+                                  border: isRegistered ? '1px solid #fecaca' : '1px solid #dbeafe'
+                                }}
+                              >
+                                {isRegistered ? (
+                                  <><XCircle size={14} style={{marginRight:'5px'}}/> Annuler</>
+                                ) : (
+                                  <><CheckCircle size={14} style={{marginRight:'5px'}}/> Rejoindre</>
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* VIEW: CHAT */}
+          {currentView === 'chat' && (
+            <motion.div key="chat" initial={{opacity:0, scale:0.98}} animate={{opacity:1, scale:1}} exit={{opacity:0}} style={{height:'100%'}}>
+              <ChatSystem user={user} token={token} />
+            </motion.div>
+          )}
+
+          {/* VIEW: ADMIN */}
+          {currentView === 'admin' && user.role === 'admin' && (
+            <motion.div key="admin" initial={{opacity:0, x:20}} animate={{opacity:1, x:0}} exit={{opacity:0}}>
+              <AdminUserManagement token={token} />
+            </motion.div>
+          )}
+
+        </AnimatePresence>
+      </main>
+
+      {/* --- BOTTOM NAV (MOBILE) --- */}
+      <nav className="mobile-only" style={styles.bottomNav}>
+        <button onClick={() => setCurrentView('planning')} style={styles.bottomNavBtn}>
+          <Calendar size={24} color={currentView === 'planning' ? '#2563eb' : '#94a3b8'} />
+        </button>
+        <button onClick={() => setCurrentView('chat')} style={styles.bottomNavBtn}>
+          <MessageSquare size={24} color={currentView === 'chat' ? '#2563eb' : '#94a3b8'} />
+        </button>
+        {user.role === 'admin' && (
+          <button onClick={() => setCurrentView('admin')} style={styles.bottomNavBtn}>
+            <Settings size={24} color={currentView === 'admin' ? '#2563eb' : '#94a3b8'} />
+          </button>
+        )}
+        <button onClick={onLogout} style={styles.bottomNavBtn}>
+          <LogOut size={24} color="#ef4444" />
+        </button>
+      </nav>
+
+      {showProfile && <ProfileModal user={user} token={token} onClose={() => setShowProfile(false)} onUpdateUser={onUpdateUser} />}
+
+      <style>{`
+        @media (max-width: 768px) {
+          .desktop-only { display: none !important; }
+          .mobile-only { display: flex !important; }
+          .nav-label { display: none; }
+        }
+        @media (min-width: 769px) {
+          .desktop-only { display: flex !important; }
+          .mobile-only { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }
+
+// --- STYLES ---
+const styles = {
+  pageContainer: { minHeight: '100vh', background: '#f8fafc', fontFamily: "'Inter', sans-serif", paddingBottom: '90px' },
+  
+  // Header Desktop
+  desktopHeader: { position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(12px)', padding: '15px 40px', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.05)' },
+  logoSection: { display: 'flex', alignItems: 'center', gap: '12px' },
+  logoBadge: { background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(37,99,235,0.3)' },
+  desktopNav: { display: 'flex', background: 'white', padding: '5px', borderRadius: '30px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', gap: '5px', border:'1px solid #f1f5f9' },
+  navItem: { position: 'relative', padding: '10px 20px', borderRadius: '25px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', transition: '0.3s' },
+  iconBtn: { width: '40px', height: '40px', borderRadius: '50%', border: '1px solid #e2e8f0', background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b', transition: '0.2s' },
+  
+  // Header Mobile
+  mobileHeader: { position: 'sticky', top: 0, zIndex: 50, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', padding: '15px 20px', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', boxShadow:'0 2px 5px rgba(0,0,0,0.02)' },
+  mobileProfileBtn: { width: '35px', height: '35px', borderRadius: '50%', background: '#2563eb', color: 'white', border: 'none', fontWeight: 'bold', display:'flex', alignItems:'center', justifyContent:'center' },
+
+  // Content
+  mainContent: { maxWidth: '1200px', margin: '0 auto', padding: '30px 20px' },
+  
+  // Stats
+  statsContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '40px' },
+  statCardMain: { background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)', borderRadius: '20px', padding: '25px', color: 'white', boxShadow: '0 10px 25px -5px rgba(37,99,235,0.4)', position: 'relative', overflow: 'hidden' },
+  exportBtn: { marginTop: '20px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', padding: '10px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', backdropFilter: 'blur(5px)', fontWeight:'600' },
+  statCardList: { background: 'white', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' },
+  leaderRow: { display: 'flex', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' },
+  badge: { background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' },
+
+  // Grid Planning
+  gridContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' },
+  dayColumn: { display: 'flex', flexDirection: 'column', gap: '15px' },
+  dayHeader: { textAlign: 'center', paddingBottom: '10px', borderBottom: '2px solid #e2e8f0', marginBottom: '10px' },
+  
+  // Slot Card
+  slotCard: { background: 'white', borderRadius: '16px', padding: '15px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', transition: '0.2s', position: 'relative' },
+  skeletonSlot: { height: '120px', background: '#e2e8f0', borderRadius: '16px', opacity: 0.5 },
+  
+  actionBtn: { width: '100%', padding: '10px', borderRadius: '10px', fontWeight: '600', fontSize: '0.85rem', cursor: 'pointer', transition: '0.2s', display:'flex', alignItems:'center', justifyContent:'center' },
+
+  // Bottom Nav
+  bottomNav: { position: 'fixed', bottom: 0, left: 0, right: 0, background: 'white', padding: '12px 30px', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 -4px 20px rgba(0,0,0,0.05)', borderRadius: '20px 20px 0 0', zIndex: 100 },
+  bottomNavBtn: { background: 'transparent', border: 'none', padding: '8px', cursor: 'pointer' }
+};
