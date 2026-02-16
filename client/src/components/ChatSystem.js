@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import EmojiPicker from 'emoji-picker-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- MESSAGE BUBBLE ---
 const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onAction }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -116,8 +115,6 @@ const bubbleStyles = {
 };
 
 export default function ChatSystem({ user, token }) {
-  // --- FIX IMPORTANT : NORMALISATION DE L'ID UTILISATEUR ---
-  // Si user.id n'existe pas (après update), on utilise user._id
   const currentUserId = user.id || user._id;
 
   const [conversations, setConversations] = useState([]);
@@ -143,9 +140,14 @@ export default function ChatSystem({ user, token }) {
   useEffect(() => { currentChatRef.current = currentChat; }, [currentChat]);
   useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
 
-  // --- SOCKET ---
+  // --- SOCKET CORRIGÉ POUR LA PRODUCTION ---
   useEffect(() => {
-    socket.current = io("ws://localhost:5000");
+    // 1. DÉTECTION AUTOMATIQUE DU SERVEUR
+    // Si on est en production (build), on utilise "/" (le site actuel)
+    // Si on est en dev, on utilise "http://localhost:5000"
+    const SERVER_URL = process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:5000';
+
+    socket.current = io(SERVER_URL);
     
     socket.current.on("getMessage", async (data) => {
       setLastMessages(prev => ({ ...prev, [data.conversationId]: data.text }));
@@ -160,7 +162,7 @@ export default function ChatSystem({ user, token }) {
           readBy: [], deletedFor: [], isDeletedForAll: false
         }]);
         
-        const receivers = currentChatRef.current.members.filter(m => m !== currentUserId);
+        const receivers = currentChatRef.current.members.filter(m => String(m) !== String(currentUserId));
         socket.current.emit("markRead", { conversationId: data.conversationId, readerId: currentUserId, receivers });
         await axios.put(`/api/chat/message/read/${data.conversationId}`, { userId: currentUserId });
 
@@ -168,7 +170,6 @@ export default function ChatSystem({ user, token }) {
         setUnreadMap(prev => ({ ...prev, [data.conversationId]: (prev[data.conversationId] || 0) + 1 }));
       }
 
-      // GESTION INTELLIGENTE DE LA LISTE (Pas de doublons)
       const currentConvs = conversationsRef.current;
       const existingConvIndex = currentConvs.findIndex(c => c._id === data.conversationId);
 
@@ -203,12 +204,12 @@ export default function ChatSystem({ user, token }) {
 
     socket.current.emit("addUser", currentUserId);
     return () => { socket.current.disconnect(); }
-  }, [currentUserId]); // Utilisation de l'ID normalisé
+  }, [currentUserId]); 
 
   // --- DATA LOADING ---
   useEffect(() => {
     const fetchData = async () => {
-      if (!currentUserId) return; // Sécurité
+      if (!currentUserId) return;
       try {
         const [resConv, resUsers] = await Promise.all([
           axios.get("/api/chat/conversation/" + currentUserId),
@@ -251,7 +252,7 @@ export default function ChatSystem({ user, token }) {
     if(e) e.preventDefault();
     if(!newMessage.trim()) return;
 
-    const receivers = currentChat.members.filter(m => m !== currentUserId);
+    const receivers = currentChat.members.filter(m => String(m) !== String(currentUserId));
 
     if (editingMessage) {
         try {
@@ -290,7 +291,7 @@ export default function ChatSystem({ user, token }) {
         await axios.put(`/api/chat/message/delete/${msg._id}`, { userId: currentUserId, type: 'me' });
     }
     if (action === 'deleteAll') {
-        const receivers = currentChat.members.filter(m => m !== currentUserId);
+        const receivers = currentChat.members.filter(m => String(m) !== String(currentUserId));
         socket.current.emit("deleteMessage", { messageId: msg._id, receivers, conversationId: currentChat._id });
         setMessages(prev => prev.map(m => m._id === msg._id ? { ...m, isDeletedForAll: true, text: "Message supprimé" } : m));
         setLastMessages(prev => ({ ...prev, [currentChat._id]: "Message supprimé" }));
@@ -305,7 +306,6 @@ export default function ChatSystem({ user, token }) {
   };
 
   const startOneOnOne = async (targetId) => {
-    // 1. Vérification avec String() pour éviter le bug des types
     const existing = conversations.find(c => !c.isGroup && c.members.some(m => String(m) === String(targetId)));
     if (existing) {
       setCurrentChat(existing);
@@ -314,13 +314,8 @@ export default function ChatSystem({ user, token }) {
     
     try {
       const res = await axios.post("/api/chat/conversation", { senderId: currentUserId, receiverId: targetId });
-      
       const alreadyInList = conversations.find(c => c._id === res.data._id);
-      
-      if (!alreadyInList) {
-          setConversations(prev => [res.data, ...prev]);
-      } 
-      
+      if (!alreadyInList) setConversations(prev => [res.data, ...prev]);
       setCurrentChat(res.data);
     } catch(err) { console.log(err); }
   };
@@ -351,14 +346,10 @@ export default function ChatSystem({ user, token }) {
     else setSelectedMembers([...selectedMembers, id]);
   };
 
-  // --- HELPERS AVEC LOGIQUE CORRIGÉE ---
   const getChatInfo = useCallback((c) => {
     if (c.isGroup) return { name: c.name, photo: null, isGroup: true };
-    
-    // Comparaison Stricte via String() pour éviter "undefined" ou "toi-même"
     const friendId = c.members.find((m) => String(m) !== String(currentUserId));
     const friend = allUsers.find((u) => u._id === friendId);
-    
     if (!friend) return { name: "Chargement...", photo: null, isGroup: false };
     return { name: `${friend.prenom} ${friend.nom}`, photo: friend.photo, isGroup: false };
   }, [allUsers, currentUserId]);
