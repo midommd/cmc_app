@@ -3,26 +3,42 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const ExcelJS = require('exceljs'); // Assure-toi que cette ligne est bien là
+const ExcelJS = require('exceljs');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const http = require('http');
 const { Server } = require("socket.io");
+const webpush = require('web-push');
 require('dotenv').config();
 
 const User = require('./models/User');
 const Slot = require('./models/Slot');
 const History = require('./models/History');
+// --- IMPORT DU NOUVEAU MODÈLE ---
+const Settings = require('./models/Settings'); 
 
 const app = express();
+
+// --- WEB PUSH SETUP (NOTIFICATIONS) ---
+const publicVapidKey = process.env.VAPID_PUBLIC_KEY;
+const privateVapidKey = process.env.VAPID_PRIVATE_KEY;
+
+if (publicVapidKey && privateVapidKey) {
+  webpush.setVapidDetails(
+    'mailto:test@cmc-connect.com',
+    publicVapidKey,
+    privateVapidKey
+  );
+} else {
+  console.warn("⚠️ VAPID keys are missing from .env. Push notifications are disabled.");
+}
 
 // --- SOCKET.IO SETUP ---
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    // FIX: Allow both Localhost AND your Production URL
-    origin: ["http://localhost:3000", process.env.RENDER_EXTERNAL_URL || "*"], 
+    origin: ["http://localhost:3000", process.env.RENDER_EXTERNAL_URL || "*"],
     methods: ["GET", "POST"]
   }
 });
@@ -48,15 +64,34 @@ io.on("connection", (socket) => {
     io.emit("getUsers", users);
   });
 
-  socket.on("sendMessage", ({ senderId, receivers, text, conversationId }) => {
+  socket.on("sendMessage", async ({ senderId, receivers, text, conversationId, messageId, replyTo }) => {
+    // 1. Envoi Socket temps réel
     receivers.forEach(receiverId => {
       const user = getUser(receiverId);
       if (user) {
         io.to(user.socketId).emit("getMessage", {
-          senderId, text, conversationId, createdAt: Date.now()
+          senderId, text, conversationId, messageId, replyTo, createdAt: Date.now()
         });
       }
     });
+
+    // 2. Envoi Notification Push
+    try {
+      if (publicVapidKey && privateVapidKey) {
+        const sender = await User.findById(senderId);
+        for (const receiverId of receivers) {
+          const receiverUser = await User.findById(receiverId);
+          if (receiverUser && receiverUser.subscription) {
+            const payload = JSON.stringify({
+              title: `Nouveau message de ${sender.prenom}`,
+              body: text.length > 30 ? text.substring(0, 30) + '...' : text,
+              url: process.env.RENDER_EXTERNAL_URL || "http://localhost:3000"
+            });
+            webpush.sendNotification(receiverUser.subscription, payload).catch(e => console.log("L'utilisateur a bloqué les notifs"));
+          }
+        }
+      }
+    } catch(err) { console.error("Push Error:", err); }
   });
 
   socket.on("markRead", ({ conversationId, readerId, receivers }) => {
@@ -89,7 +124,7 @@ io.on("connection", (socket) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.set('trust proxy', 1);
-app.use(helmet({ contentSecurityPolicy: false })); // FIX: Prevent helmet from blocking React scripts
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 1000 });
@@ -106,7 +141,22 @@ const auth = (req, res, next) => {
   catch (e) { res.status(400).json({ msg: 'Invalid Token' }); }
 };
 
-// --- ROUTES ---
+
+// --- ROUTES NOTIFICATIONS ---
+app.get('/api/vapid-public-key', (req, res) => {
+  if (!publicVapidKey) return res.status(200).json({ publicKey: null });
+  res.json({ publicKey: publicVapidKey });
+});
+
+app.post('/api/subscribe', auth, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, { subscription: req.body });
+    res.status(201).json({});
+  } catch (err) { res.status(500).json(err); }
+});
+
+
+// --- ROUTES AUTH & USERS ---
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -122,6 +172,31 @@ app.post('/api/auth/login', async (req, res) => {
 app.use('/api/users', require('./routes/users'));
 app.use('/api/chat', require('./routes/chat'));
 
+
+// --- ROUTES SETTINGS (MODE RAMADAN) ---
+app.get('/api/settings', async (req, res) => {
+  try {
+    let settings = await Settings.findOne();
+    if (!settings) settings = await Settings.create({ ramadanMode: false });
+    res.json(settings);
+  } catch (err) { res.status(500).send("Erreur Settings"); }
+});
+
+app.put('/api/settings/ramadan', auth, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ msg: "Denied" });
+  try {
+    let settings = await Settings.findOne();
+    if (!settings) settings = new Settings({ ramadanMode: false });
+    
+    settings.ramadanMode = req.body.ramadanMode;
+    await settings.save();
+    
+    res.json(settings);
+  } catch (err) { res.status(500).send("Erreur Update Settings"); }
+});
+
+
+// --- ROUTES SLOTS & STATS ---
 app.get('/api/slots', auth, async (req, res) => {
   try { const slots = await Slot.find().populate('ambassadors', 'nom prenom photo'); res.json(slots); } catch (err) { res.status(500).send("Error"); }
 });
@@ -150,65 +225,36 @@ app.get('/api/admin/stats', auth, async (req, res) => {
     } catch (err) { res.status(500).send("Error"); }
 });
 
-// --- ROUTE EXPORT CORRIGÉE ET SÉCURISÉE ---
 app.post('/api/admin/export-reset', auth, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ msg: "Denied" });
-  
   try {
     const slots = await Slot.find().populate('ambassadors', 'nom prenom email'); 
-    
-    // Création du fichier Excel
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Semaine'); 
-    
-    worksheet.columns = [
-      { header: 'Jour', key: 'd', width: 15 }, 
-      { header: 'Période', key: 'p', width: 15 }, 
-      { header: 'Nom', key: 'n', width: 30 }, 
-      { header: 'Email', key: 'e', width: 30 }
-    ];
-    
+    worksheet.columns = [{ header: 'Jour', key: 'd', width: 15 }, { header: 'Période', key: 'p', width: 15 }, { header: 'Nom', key: 'n', width: 30 }, { header: 'Email', key: 'e', width: 30 }];
     let historyBatch = []; 
-    
     slots.forEach(s => {
-      // Sécurité : On vérifie si s.ambassadors existe
       if (s.ambassadors && s.ambassadors.length > 0) {
         s.ambassadors.forEach(u => { 
-          // CRUCIAL : On vérifie si l'utilisateur 'u' existe (pas supprimé)
           if (u) {
-            worksheet.addRow({ 
-              d: s.day, 
-              p: s.period, 
-              n: `${u.nom} ${u.prenom}`, 
-              e: u.email 
-            }); 
+            worksheet.addRow({ d: s.day, p: s.period, n: `${u.nom} ${u.prenom}`, e: u.email }); 
             historyBatch.push({ userId: u._id, date: new Date() }); 
           }
         });
       }
     });
-
     if (historyBatch.length > 0) await History.insertMany(historyBatch); 
-    
-    // Reset des slots
     await Slot.updateMany({}, { $set: { ambassadors: [] } });
-    
-    // Envoi du fichier
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); 
     res.setHeader("Content-Disposition", "attachment; filename=" + "Report.xlsx");
-    
-    await workbook.xlsx.write(res); 
-    res.end();
-
-  } catch (err) { 
-    console.error("ERREUR EXPORT:", err); // Affiche l'erreur précise dans le terminal
-    res.status(500).send("Erreur Export: " + err.message); 
-  }
+    await workbook.xlsx.write(res); res.end();
+  } catch (err) { console.error(err); res.status(500).send("Erreur Export"); }
 });
 
+
+// --- SERVING REACT EN PRODUCTION ---
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
-  // FIX CRITIQUE : Utilisation de Regex /.*/ au lieu de '*' pour éviter l'erreur "Missing parameter name"
   app.get(/.*/, (req, res) => res.sendFile(path.resolve(__dirname, '../client', 'build', 'index.html')));
 }
 

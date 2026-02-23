@@ -1,107 +1,159 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { io } from "socket.io-client";
-import { Send, User, Users, ArrowLeft, X, Trash2, Smile, MoreVertical, Edit2, EyeOff, Copy } from 'lucide-react';
+import { Send, User, Users, ArrowLeft, X, Trash2, Smile, MoreVertical, Edit2, EyeOff, Copy, Reply } from 'lucide-react';
 import toast from 'react-hot-toast';
 import EmojiPicker from 'emoji-picker-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 
-const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onAction }) => {
+// --- MESSAGE BUBBLE AVEC SWIPE & MENU FIXE ---
+const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onAction, onReply }) => {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
+  const controls = useAnimation(); // Pour contrôler l'animation du swipe
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(event.target)) setShowMenu(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // GESTION DU SWIPE
+  const handleDragEnd = (event, info) => {
+    if (info.offset.x > 50) { // Si on glisse de plus de 50px vers la droite
+      onReply(message);
+    }
+    controls.start({ x: 0 }); // Retour à la position initiale
+  };
+
   return (
-    <div 
-      className="message-row"
-      style={{
-        display:'flex', 
-        flexDirection: isOwn ? 'row-reverse' : 'row', 
-        marginBottom:'8px', 
-        alignItems: 'flex-end', 
-        gap:'8px',
-        padding: '0 10px'
-      }} 
-    >
-      {!isOwn && (
-        <div style={{flexShrink: 0, paddingBottom: '4px'}}>
-           {senderInfo.photo ? 
-            <img src={senderInfo.photo} style={bubbleStyles.msgAvatar} alt=""/> : 
-            <div style={bubbleStyles.msgAvatarPlaceholder}>{senderInfo.prenom?.[0]}</div>
-           }
-        </div>
-      )}
+    <div className="message-row" style={{marginBottom:'15px', position:'relative', overflowX:'clip', padding:'0 10px'}}>
       
-      <div style={{position:'relative', maxWidth:'75%'}} ref={menuRef}>
-        <div 
-          style={isOwn ? bubbleStyles.messageOwn : bubbleStyles.messageOther}
-          onContextMenu={(e) => { e.preventDefault(); if(!message.isDeletedForAll) setShowMenu(!showMenu); }}
-        >
-          {isGroup && !isOwn && <div style={{fontSize:'0.7rem', fontWeight:'bold', color:'#2563eb', marginBottom:'2px'}}>{senderInfo.prenom}</div>}
-          
-          {message.isDeletedForAll ? (
-            <span style={{fontStyle:'italic', opacity:0.6, display:'flex', alignItems:'center', gap:'5px', color: isOwn ? 'rgba(255,255,255,0.7)' : '#64748b'}}>
-              <EyeOff size={14}/> Message supprimé
-            </span>
-          ) : (
-            <span style={{whiteSpace: 'pre-wrap'}}>{message.text}</span>
-          )}
-
-          <div style={{
-            fontSize:'0.65rem', opacity:0.7, marginTop:'4px', 
-            textAlign:'right', display:'flex', justifyContent:'flex-end', gap:'4px', alignItems:'center'
-          }}>
-            {message.isEdited && !message.isDeletedForAll && <span>(modifié)</span>}
-            {new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+      <motion.div 
+        drag="x" 
+        dragConstraints={{ left: 0, right: 100 }} 
+        onDragEnd={handleDragEnd}
+        animate={controls}
+        style={{
+          display:'flex', 
+          flexDirection: isOwn ? 'row-reverse' : 'row', 
+          alignItems: 'flex-end', 
+          gap:'8px',
+          touchAction: 'pan-y' // Important pour le scroll mobile
+        }}
+      >
+        {/* Avatar */}
+        {!isOwn && (
+          <div style={{flexShrink: 0, paddingBottom: '4px'}}>
+             {senderInfo.photo ? 
+              <img src={senderInfo.photo} style={bubbleStyles.msgAvatar} alt=""/> : 
+              <div style={bubbleStyles.msgAvatarPlaceholder}>{senderInfo.prenom?.[0]}</div>
+             }
           </div>
-        </div>
-
-        {!message.isDeletedForAll && (
-          <button 
-            onClick={() => setShowMenu(!showMenu)}
-            className="dots-trigger"
-            style={{
-              position: 'absolute', top: '50%', [isOwn ? 'left' : 'right']: '-25px', transform: 'translateY(-50%)',
-              background: 'none', border: 'none', cursor: 'pointer', opacity: showMenu ? 1 : 0, transition: 'opacity 0.2s', color: '#94a3b8'
-            }}
-          >
-            <MoreVertical size={16} />
-          </button>
         )}
+        
+        {/* Bulle + Menu Container */}
+        <div style={{position:'relative', maxWidth:'80%', display:'flex', flexDirection:'column'}} ref={menuRef}>
+          
+          <div 
+            style={isOwn ? bubbleStyles.messageOwn : bubbleStyles.messageOther}
+            onContextMenu={(e) => { e.preventDefault(); if(!message.isDeletedForAll) setShowMenu(!showMenu); }}
+          >
+            {isGroup && !isOwn && <div style={{fontSize:'0.7rem', fontWeight:'bold', color:'#2563eb', marginBottom:'2px'}}>{senderInfo.prenom}</div>}
+            
+            {/* --- AFFICHAGE DE LA REPONSE DANS LA BULLE --- */}
+            {message.replyTo && !message.isDeletedForAll && (
+              <div style={{
+                backgroundColor: isOwn ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)',
+                borderLeft: `3px solid ${isOwn ? 'rgba(255,255,255,0.7)' : '#2563eb'}`,
+                padding: '4px 8px',
+                borderRadius: '4px',
+                marginBottom: '6px',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <span style={{fontSize: '0.7rem', fontWeight: 'bold', color: isOwn ? 'white' : '#2563eb', opacity: 0.9}}>
+                  {message.replyTo.senderName}
+                </span>
+                <span style={{fontSize: '0.75rem', color: isOwn ? 'rgba(255,255,255,0.8)' : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%'}}>
+                  {message.replyTo.text}
+                </span>
+              </div>
+            )}
 
-        <AnimatePresence>
-          {showMenu && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, x: isOwn ? -10 : 10 }}
-              animate={{ opacity: 1, scale: 1, x: 0 }}
-              exit={{ opacity: 0, scale: 0.9 }}
+            {/* Contenu du message */}
+            {message.isDeletedForAll ? (
+              <span style={{fontStyle:'italic', opacity:0.6, display:'flex', alignItems:'center', gap:'5px', color: isOwn ? 'rgba(255,255,255,0.7)' : '#64748b'}}>
+                <EyeOff size={14}/> Message supprimé
+              </span>
+            ) : (
+              <span style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word'}}>{message.text}</span>
+            )}
+
+            <div style={{
+              fontSize:'0.65rem', opacity:0.7, marginTop:'4px', 
+              textAlign:'right', display:'flex', justifyContent:'flex-end', gap:'4px', alignItems:'center'
+            }}>
+              {message.isEdited && !message.isDeletedForAll && <span>(modifié)</span>}
+              {new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            </div>
+          </div>
+
+          {/* Bouton 3 points */}
+          {!message.isDeletedForAll && (
+            <button 
+              onClick={() => setShowMenu(!showMenu)}
+              className="dots-trigger"
               style={{
-                position: 'absolute', top: 0, [isOwn ? 'right' : 'left']: '100%', margin: '0 8px',
-                background: 'white', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', borderRadius: '12px', zIndex: 100, 
-                overflow: 'hidden', minWidth: '160px', border: '1px solid #f1f5f9'
+                position: 'absolute', 
+                top: '50%', 
+                [isOwn ? 'left' : 'right']: '-25px', 
+                transform: 'translateY(-50%)',
+                background: 'none', border: 'none', cursor: 'pointer', opacity: showMenu ? 1 : 0, transition: 'opacity 0.2s', color: '#94a3b8',
+                zIndex: 10
               }}
             >
-              {isOwn && (
-                <>
-                  <button onClick={() => {onAction('edit', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Edit2 size={14} color="#2563eb"/> Modifier</button>
-                  <button onClick={() => {onAction('deleteAll', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Users size={14} color="#ef4444"/> Suppr. pour tous</button>
-                </>
-              )}
-              <button onClick={() => {onAction('deleteMe', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Trash2 size={14} color="#ef4444"/> Suppr. pour moi</button>
-              <button onClick={() => {navigator.clipboard.writeText(message.text); setShowMenu(false)}} style={bubbleStyles.menuItem}><Copy size={14} color="#64748b"/> Copier</button>
-            </motion.div>
+              <MoreVertical size={16} />
+            </button>
           )}
-        </AnimatePresence>
-      </div>
+
+          {/* MENU CONTEXTUEL (FIXÉ) */}
+          <AnimatePresence>
+            {showMenu && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                style={{
+                  position: 'absolute', 
+                  top: '100%', 
+                  [isOwn ? 'right' : 'left']: 0, 
+                  marginTop: '5px',
+                  background: 'white', 
+                  boxShadow: '0 4px 15px rgba(0,0,0,0.15)', 
+                  borderRadius: '12px', 
+                  zIndex: 100, 
+                  overflow: 'hidden', 
+                  minWidth: '150px',
+                  border: '1px solid #f1f5f9'
+                }}
+              >
+                <button onClick={() => {onReply(message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Reply size={14} color="#2563eb"/> Répondre</button>
+                {isOwn && (
+                  <>
+                    <button onClick={() => {onAction('edit', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Edit2 size={14} color="#2563eb"/> Modifier</button>
+                    <button onClick={() => {onAction('deleteAll', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Users size={14} color="#ef4444"/> Suppr. pour tous</button>
+                  </>
+                )}
+                <button onClick={() => {onAction('deleteMe', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Trash2 size={14} color="#ef4444"/> Suppr. pour moi</button>
+                <button onClick={() => {navigator.clipboard.writeText(message.text); setShowMenu(false)}} style={bubbleStyles.menuItem}><Copy size={14} color="#64748b"/> Copier</button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
     </div>
   );
 });
@@ -109,8 +161,8 @@ const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onActio
 const bubbleStyles = {
   msgAvatar: { width:'28px', height:'28px', borderRadius:'50%', objectFit:'cover' },
   msgAvatarPlaceholder: { width:'28px', height:'28px', borderRadius:'50%', background:'#cbd5e1', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.7rem', fontWeight:'bold', color:'white' },
-  messageOwn: { background: '#2563eb', color: 'white', padding: '8px 14px', borderRadius: '18px 18px 4px 18px', boxShadow:'0 2px 5px rgba(37,99,235,0.2)', wordBreak: 'break-word', fontSize:'0.95rem', minWidth:'80px' },
-  messageOther: { background: 'white', border:'1px solid #e2e8f0', color: '#1e293b', padding: '8px 14px', borderRadius: '18px 18px 18px 4px', boxShadow:'0 2px 5px rgba(0,0,0,0.03)', wordBreak: 'break-word', fontSize:'0.95rem', minWidth:'80px' },
+  messageOwn: { background: '#2563eb', color: 'white', padding: '10px 14px', borderRadius: '18px 18px 4px 18px', boxShadow:'0 2px 5px rgba(37,99,235,0.2)', wordBreak: 'break-word', fontSize:'0.95rem', minWidth:'80px' },
+  messageOther: { background: 'white', border:'1px solid #e2e8f0', color: '#1e293b', padding: '10px 14px', borderRadius: '18px 18px 18px 4px', boxShadow:'0 2px 5px rgba(0,0,0,0.03)', wordBreak: 'break-word', fontSize:'0.95rem', minWidth:'80px' },
   menuItem: { display:'flex', alignItems:'center', gap:'10px', width:'100%', padding:'10px 14px', textAlign:'left', background:'white', border:'none', cursor:'pointer', fontSize:'0.85rem', borderBottom:'1px solid #f8fafc', color:'#334155', transition: '0.2s', fontWeight:'500' }
 };
 
@@ -127,6 +179,8 @@ export default function ChatSystem({ user, token }) {
   const [lastMessages, setLastMessages] = useState({}); 
 
   const [editingMessage, setEditingMessage] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null); // ETAT POUR LA REPONSE
+  
   const [showEmoji, setShowEmoji] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [groupName, setGroupName] = useState("");
@@ -136,43 +190,102 @@ export default function ChatSystem({ user, token }) {
   const scrollRef = useRef();
   const currentChatRef = useRef(currentChat);
   const conversationsRef = useRef(conversations);
+  const inputRef = useRef(null); // Pour focus l'input
 
   useEffect(() => { currentChatRef.current = currentChat; }, [currentChat]);
   useEffect(() => { conversationsRef.current = conversations; }, [conversations]);
 
-  // --- SOCKET CORRIGÉ POUR LA PRODUCTION ---
-  useEffect(() => {
-    // 1. DÉTECTION AUTOMATIQUE DU SERVEUR
-    // Si on est en production (build), on utilise "/" (le site actuel)
-    // Si on est en dev, on utilise "http://localhost:5000"
-    const SERVER_URL = process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:5000';
+  // --- FONCTIONS PUSH NOTIF ---
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
 
+ async function registerPush(token) {
+    try {
+      const baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
+      const resKey = await axios.get(`${baseURL}/api/vapid-public-key`);
+      
+      const publicVapidKey = resKey.data.publicKey;
+      
+      if (!publicVapidKey) {
+        console.warn("Push notifications are not configured on the server yet.");
+        return; 
+      }
+      
+      if ('serviceWorker' in navigator) {
+        // 1. Register the Service Worker
+        const register = await navigator.serviceWorker.register('/worker.js', { scope: '/' });
+        
+        // 2. WAIT for the Service Worker to be fully active before subscribing
+        let activeServiceWorker = register.active;
+        if (!activeServiceWorker) {
+            // Wait for the state to change if it's currently installing
+            await new Promise((resolve) => {
+                register.addEventListener('updatefound', () => {
+                    const newWorker = register.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'activated') {
+                            resolve();
+                        }
+                    });
+                });
+            });
+        }
+
+        // 3. Now we can safely subscribe, or use the existing subscription
+        let subscription = await register.pushManager.getSubscription();
+        
+        if (!subscription) {
+            subscription = await register.pushManager.subscribe({
+                userVisibleOnly: true, 
+                applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+            });
+        }
+        
+        // 4. Send the subscription to your backend
+        await axios.post(`${baseURL}/api/subscribe`, subscription, { 
+          headers: { 
+            'content-type': 'application/json', 
+            'x-auth-token': token 
+          } 
+        });
+        console.log("Push notifications activated!");
+      }
+    } catch (err) { 
+      console.error('Push Error:', err); 
+    }
+  }
+
+  useEffect(() => { if (token) registerPush(token); }, [token]);
+
+  // --- SOCKET ---
+  useEffect(() => {
+    const SERVER_URL = process.env.NODE_ENV === 'production' ? '/' : 'http://localhost:5000';
     socket.current = io(SERVER_URL);
     
     socket.current.on("getMessage", async (data) => {
       setLastMessages(prev => ({ ...prev, [data.conversationId]: data.text }));
-
       if (currentChatRef.current?._id === data.conversationId) {
         setMessages((prev) => [...prev, {
-          _id: data.messageId, 
-          sender: data.senderId,
-          text: data.text,
-          createdAt: data.createdAt,
-          conversationId: data.conversationId,
-          readBy: [], deletedFor: [], isDeletedForAll: false
+          _id: data.messageId, sender: data.senderId, text: data.text, createdAt: data.createdAt,
+          conversationId: data.conversationId, readBy: [], deletedFor: [], isDeletedForAll: false,
+          replyTo: data.replyTo // Ajout pour la reception
         }]);
-        
         const receivers = currentChatRef.current.members.filter(m => String(m) !== String(currentUserId));
         socket.current.emit("markRead", { conversationId: data.conversationId, readerId: currentUserId, receivers });
         await axios.put(`/api/chat/message/read/${data.conversationId}`, { userId: currentUserId });
-
       } else {
         setUnreadMap(prev => ({ ...prev, [data.conversationId]: (prev[data.conversationId] || 0) + 1 }));
       }
-
       const currentConvs = conversationsRef.current;
       const existingConvIndex = currentConvs.findIndex(c => c._id === data.conversationId);
-
       if (existingConvIndex !== -1) {
         const updatedConv = { ...currentConvs[existingConvIndex], updatedAt: Date.now() };
         const newConvs = [...currentConvs];
@@ -204,9 +317,8 @@ export default function ChatSystem({ user, token }) {
 
     socket.current.emit("addUser", currentUserId);
     return () => { socket.current.disconnect(); }
-  }, [currentUserId]); 
+  }, [currentUserId]);
 
-  // --- DATA LOADING ---
   useEffect(() => {
     const fetchData = async () => {
       if (!currentUserId) return;
@@ -222,7 +334,6 @@ export default function ChatSystem({ user, token }) {
     fetchData();
   }, [currentUserId, token]);
 
-  // --- OPEN CHAT ---
   useEffect(() => {
     const getMessages = async () => {
       if(currentChat) {
@@ -231,10 +342,9 @@ export default function ChatSystem({ user, token }) {
           setMessages(res.data);
           setShowEmoji(false);
           setEditingMessage(null);
-          
+          setReplyingTo(null);
           setUnreadMap(prev => { const newMap = { ...prev }; delete newMap[currentChat._id]; return newMap; });
           await axios.put(`/api/chat/message/read/${currentChat._id}`, { userId: currentUserId });
-          
         } catch (err) { console.log(err); }
       }
     };
@@ -245,9 +355,13 @@ export default function ChatSystem({ user, token }) {
     scrollRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages]);
 
-  // --- ACTIONS ---
   const handleEmojiClick = (emojiObject) => setNewMessage(prev => prev + emojiObject.emoji);
 
+  const getSenderInfo = useCallback((senderId) => {
+    return allUsers.find(u => u._id === senderId) || { prenom: '...', photo: null };
+  }, [allUsers]);
+
+  // --- SUBMIT AVEC REPLY ---
   const handleSubmit = async (e) => {
     if(e) e.preventDefault();
     if(!newMessage.trim()) return;
@@ -267,17 +381,36 @@ export default function ChatSystem({ user, token }) {
         return;
     }
 
-    const messagePayload = { sender: currentUserId, text: newMessage, conversationId: currentChat._id };
+    // CONSTRUCTION DU PAYLOAD REPLY
+    let replyPayload = null;
+    if (replyingTo) {
+      const replyUser = getSenderInfo(replyingTo.sender);
+      replyPayload = {
+        id: replyingTo._id,
+        text: replyingTo.text,
+        senderName: replyUser ? `${replyUser.prenom} ${replyUser.nom}` : "Utilisateur"
+      };
+    }
+
+    const messagePayload = { 
+        sender: currentUserId, 
+        text: newMessage, 
+        conversationId: currentChat._id,
+        replyTo: replyPayload // Ajout à la DB
+    };
+
     try {
       const res = await axios.post("/api/chat/message", messagePayload);
       setMessages([...messages, res.data]);
       setNewMessage("");
       setShowEmoji(false);
+      setReplyingTo(null); // Reset reply
       setLastMessages(prev => ({ ...prev, [currentChat._id]: newMessage }));
       
       socket.current.emit("sendMessage", { 
         senderId: currentUserId, receivers, text: newMessage, 
-        conversationId: currentChat._id, messageId: res.data._id 
+        conversationId: currentChat._id, messageId: res.data._id,
+        replyTo: replyPayload // Envoi Socket
       });
 
       const otherConvs = conversations.filter(c => c._id !== currentChat._id);
@@ -302,16 +435,19 @@ export default function ChatSystem({ user, token }) {
         if (diff > 15) { toast.error("Trop tard pour modifier (>15min)"); return; }
         setEditingMessage(msg);
         setNewMessage(msg.text);
+        inputRef.current?.focus();
     }
+  };
+
+  const handleReply = (msg) => {
+    setReplyingTo(msg);
+    setEditingMessage(null);
+    inputRef.current?.focus();
   };
 
   const startOneOnOne = async (targetId) => {
     const existing = conversations.find(c => !c.isGroup && c.members.some(m => String(m) === String(targetId)));
-    if (existing) {
-      setCurrentChat(existing);
-      return; 
-    } 
-    
+    if (existing) { setCurrentChat(existing); return; } 
     try {
       const res = await axios.post("/api/chat/conversation", { senderId: currentUserId, receiverId: targetId });
       const alreadyInList = conversations.find(c => c._id === res.data._id);
@@ -353,10 +489,6 @@ export default function ChatSystem({ user, token }) {
     if (!friend) return { name: "Chargement...", photo: null, isGroup: false };
     return { name: `${friend.prenom} ${friend.nom}`, photo: friend.photo, isGroup: false };
   }, [allUsers, currentUserId]);
-
-  const getSenderInfo = useCallback((senderId) => {
-    return allUsers.find(u => u._id === senderId) || { prenom: '...', photo: null };
-  }, [allUsers]);
 
   const quickContactsList = useMemo(() => {
     return allUsers.filter(u => u._id !== currentUserId).map(u => (
@@ -434,29 +566,47 @@ export default function ChatSystem({ user, token }) {
               {messages.filter(m => !(m.deletedFor || []).includes(currentUserId)).map((m, i) => (
                 <MessageBubble 
                   key={i} message={m} isOwn={m.sender === currentUserId} senderInfo={getSenderInfo(m.sender)} 
-                  isGroup={currentChat.isGroup} onAction={handleMessageAction}
+                  isGroup={currentChat.isGroup} onAction={handleMessageAction} onReply={handleReply} 
                 />
               ))}
               <div ref={scrollRef}></div>
             </div>
             
-            <div style={styles.chatBoxBottom}>
-              {showEmoji && (
-                <div style={styles.emojiPickerContainer}>
-                  <EmojiPicker onEmojiClick={handleEmojiClick} width={300} height={400} />
-                </div>
+            <div style={{...styles.chatBoxBottom, flexDirection:'column', alignItems:'stretch', padding:'0'}}>
+              
+              {/* BARRE DE RÉPONSE */}
+              {replyingTo && (
+                <motion.div 
+                  initial={{height:0, opacity:0}} animate={{height:'auto', opacity:1}}
+                  style={{background:'#f1f5f9', padding:'8px 15px', borderLeft:'4px solid #2563eb', display:'flex', justifyContent:'space-between', alignItems:'center', margin:'10px 10px 0 10px', borderRadius:'8px'}}
+                >
+                  <div style={{fontSize:'0.85rem', color:'#334155', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'90%'}}>
+                    <strong style={{color:'#2563eb', display:'block', fontSize:'0.75rem'}}>Réponse à un message</strong>
+                    {replyingTo.text}
+                  </div>
+                  <button onClick={() => setReplyingTo(null)} style={{background:'none', border:'none', cursor:'pointer'}}><X size={16}/></button>
+                </motion.div>
               )}
-              <button onClick={() => setShowEmoji(!showEmoji)} style={{...styles.iconBtn, color: showEmoji ? '#2563eb' : '#94a3b8'}}>
-                <Smile size={24}/>
-              </button>
-              <input 
-                style={styles.chatInput} 
-                placeholder={editingMessage ? "Modifier..." : "Écrivez un message..."} 
-                onChange={(e) => setNewMessage(e.target.value)} value={newMessage}
-                onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)} onFocus={() => setShowEmoji(false)} 
-              />
-              {editingMessage && <button onClick={() => { setEditingMessage(null); setNewMessage(""); }} style={{...styles.iconBtn, color:'red'}}><X size={20}/></button>}
-              <button style={styles.chatSubmit} onClick={handleSubmit}>{editingMessage ? <Edit2 size={18}/> : <Send size={20}/>}</button>
+
+              <div style={{display:'flex', alignItems:'center', gap:'10px', padding:'15px', width:'100%'}}>
+                {showEmoji && (
+                  <div style={styles.emojiPickerContainer}>
+                    <EmojiPicker onEmojiClick={handleEmojiClick} width={300} height={400} />
+                  </div>
+                )}
+                <button onClick={() => setShowEmoji(!showEmoji)} style={{...styles.iconBtn, color: showEmoji ? '#2563eb' : '#94a3b8'}}>
+                  <Smile size={24}/>
+                </button>
+                <input 
+                  ref={inputRef}
+                  style={styles.chatInput} 
+                  placeholder={editingMessage ? "Modifier..." : "Écrivez un message..."} 
+                  onChange={(e) => setNewMessage(e.target.value)} value={newMessage}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)} onFocus={() => setShowEmoji(false)} 
+                />
+                {editingMessage && <button onClick={() => { setEditingMessage(null); setNewMessage(""); }} style={{...styles.iconBtn, color:'red'}}><X size={20}/></button>}
+                <button style={styles.chatSubmit} onClick={handleSubmit}>{editingMessage ? <Edit2 size={18}/> : <Send size={20}/>}</button>
+              </div>
             </div>
           </>
         ) : (

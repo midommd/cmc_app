@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-// AJOUT DE CheckCircle et XCircle ICI
-import { LogOut, Shield, Users, Download, Calendar, Settings, MessageSquare, User, CheckCircle, XCircle } from 'lucide-react';
+// AJOUT DE Moon POUR LE RAMADAN
+import { LogOut, Shield, Users, Download, Calendar, Settings, MessageSquare, User, CheckCircle, XCircle, Moon } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import ProfileModal from './ProfileModal';
 import AdminUserManagement from './AdminUserManagement';
@@ -13,6 +13,9 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
   const [stats, setStats] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
   const [currentView, setCurrentView] = useState('planning');
+  
+  // --- ÉTAT DU MODE RAMADAN ---
+  const [ramadanMode, setRamadanMode] = useState(false);
   
   const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 
@@ -32,13 +35,25 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
     }
   }, [token, user.role]);
 
-  useEffect(() => { refreshData(); }, [refreshData]);
+  // --- CHARGEMENT DES SETTINGS (RAMADAN) ---
+  const fetchSettings = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/settings');
+      setRamadanMode(res.data.ramadanMode);
+    } catch (err) { 
+      console.error("Erreur chargement settings", err); 
+    }
+  }, []);
+
+  useEffect(() => { 
+    refreshData(); 
+    fetchSettings();
+  }, [refreshData, fetchSettings]);
 
   // --- ACTIONS ---
   const handleToggle = async (slotId) => {
     try {
       await axios.post('/api/slots/toggle', { slotId }, { headers: { 'x-auth-token': token } });
-      // On rafraîchit immédiatement les données pour mettre à jour le bouton
       await refreshData();
       toast.success("Mise à jour réussie");
     } catch (err) {
@@ -66,6 +81,21 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
     } catch (err) {
       toast.dismiss(loadToast);
       toast.error("Erreur export");
+    }
+  };
+
+  // --- TOGGLE RAMADAN (ADMIN) ---
+  const toggleRamadanMode = async () => {
+    const newMode = !ramadanMode;
+    setRamadanMode(newMode); // Update UI immédiatement
+    try {
+      await axios.put('/api/settings/ramadan', { ramadanMode: newMode }, {
+        headers: { 'x-auth-token': token }
+      });
+      toast.success(newMode ? "🌙 Mode Ramadan Activé" : "☀️ Mode normal rétabli");
+    } catch (err) {
+      setRamadanMode(!newMode); // Revert en cas d'erreur
+      toast.error("Erreur de sauvegarde du mode");
     }
   };
 
@@ -140,9 +170,22 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                       </div>
                       <div style={{background:'rgba(255,255,255,0.2)', padding:'8px', borderRadius:'10px'}}><Calendar color="white"/></div>
                     </div>
-                    <button onClick={handleExportReset} style={styles.exportBtn}>
-                      <Download size={16}/> Clôturer Semaine
-                    </button>
+                    
+                    {/* CONTROLES ADMIN (Export + Ramadan) */}
+                    <div style={{display:'flex', gap:'10px', marginTop:'20px', flexWrap:'wrap'}}>
+                      <button onClick={handleExportReset} style={styles.exportBtn}>
+                        <Download size={16}/> Clôturer Semaine
+                      </button>
+                      
+                      <div style={styles.ramadanToggleContainer}>
+                        <Moon size={16} color={ramadanMode ? "#fbbf24" : "rgba(255,255,255,0.7)"} />
+                        <span style={{fontSize:'0.85rem', fontWeight:'600'}}>Ramadan</span>
+                        <button onClick={toggleRamadanMode} style={{...styles.toggleBtn, background: ramadanMode ? '#fbbf24' : 'rgba(255,255,255,0.3)'}}>
+                          <div style={{...styles.toggleCircle, left: ramadanMode ? '22px' : '2px'}}></div>
+                        </button>
+                      </div>
+                    </div>
+
                   </div>
                   
                   <div style={styles.statCardList}>
@@ -173,7 +216,6 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                         if (!slot) return <div key={period} style={styles.skeletonSlot}></div>;
                         
                         const isFull = slot.ambassadors.length >= 3;
-                        // Vérification robuste
                         const isRegistered = slot.ambassadors.some(a => (a._id === user.id) || (a._id === user._id));
                         
                         return (
@@ -183,7 +225,11 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                           }}>
                             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'10px'}}>
                               <span style={{fontSize:'0.8rem', fontWeight:'700', color:'#334155'}}>
-                                {period === 'Matin' ? '09:00 - 12:30' : '13:30 - 16:30'}
+                                {/* GESTION DYNAMIQUE DE L'HEURE SELON LE MODE RAMADAN */}
+                                {period === 'Matin' 
+                                  ? (ramadanMode ? '09:00 - 12:00' : '09:00 - 12:30') 
+                                  : (ramadanMode ? '12:00 - 15:00' : '13:30 - 16:30')
+                                }
                               </span>
                               <span style={{
                                 fontSize:'0.7rem', padding:'2px 8px', borderRadius:'12px', fontWeight:'700',
@@ -313,7 +359,11 @@ const styles = {
   // Stats
   statsContainer: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '40px' },
   statCardMain: { background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)', borderRadius: '20px', padding: '25px', color: 'white', boxShadow: '0 10px 25px -5px rgba(37,99,235,0.4)', position: 'relative', overflow: 'hidden' },
-  exportBtn: { marginTop: '20px', background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', padding: '10px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', backdropFilter: 'blur(5px)', fontWeight:'600' },
+  exportBtn: { background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', padding: '8px 15px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', backdropFilter: 'blur(5px)', fontWeight:'600', transition:'0.2s' },
+  ramadanToggleContainer: { background: 'rgba(0,0,0,0.15)', padding: '8px 15px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid rgba(255,255,255,0.1)' },
+  toggleBtn: { width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.3s' },
+  toggleCircle: { width: '20px', height: '20px', background: 'white', borderRadius: '50%', position: 'absolute', top: '2px', transition: 'left 0.3s', boxShadow: '0 2px 4px rgba(0,0,0,0.2)' },
+  
   statCardList: { background: 'white', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 15px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' },
   leaderRow: { display: 'flex', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' },
   badge: { background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' },

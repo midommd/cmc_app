@@ -95,7 +95,7 @@ export default function AdminUserManagement({ token }) {
             <thead>
               <tr>
                 <th>Identité</th>
-                <th>Contact</th>
+                <th>Login</th>
                 <th>Filière</th>
                 <th style={{textAlign: 'center'}}>Actions</th>
               </tr>

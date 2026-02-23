@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Quote, Sparkles, Briefcase, Heart } from 'lucide-react';
+// Added Linkedin to imports
+import { ArrowLeft, Quote, Sparkles, Briefcase, Heart, Linkedin } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AmbassadorsPage() {
@@ -105,7 +106,7 @@ export default function AmbassadorsPage() {
 
                 {/* Content */}
                 <div style={styles.cardBody}>
-                  <h3 style={styles.name}>{amb.prenom} {amb.nom}</h3>
+                  <h3 style={{name: styles.name}}>{amb.prenom} {amb.nom}</h3>
                   
                   {/* Quote Section */}
                   <div style={styles.quoteContainer}>
@@ -120,6 +121,16 @@ export default function AmbassadorsPage() {
                     <div style={styles.hobbyLabel}><Heart size={14} color="#e11d48"/> Passions :</div>
                     <p style={styles.hobbiesText}>{amb.hobbies}</p>
                   </div>
+
+                  {/* --- NEW: LINKEDIN SECTION --- */}
+                  {amb.linkedin && (
+                    <div style={{marginTop: '20px', textAlign: 'center'}}>
+                      <a href={amb.linkedin} target="_blank" rel="noopener noreferrer" style={styles.linkedinBtn}>
+                        <Linkedin size={16} /> Voir le profil LinkedIn
+                      </a>
+                    </div>
+                  )}
+
                 </div>
 
               </motion.div>
@@ -215,5 +226,13 @@ const styles = {
   divider: { height: '1px', background: '#e2e8f0', width: '60%', margin: '0 auto 20px' },
   hobbiesContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' },
   hobbyLabel: { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' },
-  hobbiesText: { color: '#334155', fontWeight: '600', fontSize: '0.95rem' }
+  hobbiesText: { color: '#334155', fontWeight: '600', fontSize: '0.95rem' },
+  
+  // New Linkedin Style
+  linkedinBtn: {
+    display: 'inline-flex', alignItems: 'center', gap: '8px',
+    textDecoration: 'none', color: '#0077b5', background: '#f0f9ff',
+    padding: '8px 16px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '700',
+    border: '1px solid #bae6fd', transition: '0.2s'
+  }
 };
