@@ -19,7 +19,7 @@ const DEFAULT_CLUBS = [
       { id: 'foot', name: 'Football Club', icon: '⚽', desc: 'Entraînements tactiques et tournois inter-écoles.', responsable: { nom: 'Hakimi', prenom: 'Yassine', filiere: 'Gestion', msg: "La gagne est dans notre ADN." } },
       { id: 'volley', name: 'Volleyball', icon: '🏐', desc: 'Esprit d\'équipe et smashs explosifs.', responsable: { nom: 'Malki', prenom: 'Ines', filiere: 'Marketing', msg: "On ne laisse tomber aucun ballon." } },
       { id: 'basket', name: 'Basketball Team', icon: '🏀', desc: 'Streetball et championnat régional.', responsable: { nom: 'Nadir', prenom: 'Kenza', filiere: 'IA', msg: "Viser le panier, atteindre l'excellence." } },
-      { id: 'echecs', name: 'Club d\'Échecs', icon: '♟️', desc: 'Stratégie, concentration et tournois mentaux.', responsable: { nom: 'Mansouri', prenom: 'Adnane', filiere: 'Dev Digital', msg: "Un coup d'avance sur le futur." } }
+      { id: 'Echecs', name: 'Club d\'Échecs', icon: '♟️', desc: 'Stratégie, concentration et tournois mentaux.', responsable: { nom: 'Mansouri', prenom: 'Adnane', filiere: 'Dev Digital', msg: "Un coup d'avance sur le futur." } }
     ]
   },
   {
