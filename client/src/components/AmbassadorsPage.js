@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Quote, Briefcase, Users, Trophy, ChevronRight, User as UserIcon, Heart, Linkedin, ExternalLink, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- MOCK DATA PAR DÉFAUT (Les pôles exacts que tu as demandés) ---
+// --- MOCK DATA PAR DÉFAUT ---
 const DEFAULT_CLUBS = [
   {
     id: 'sportif', name: 'Pôle Sportif', icon: '🏆', color: 'from-blue-500 to-cyan-500', bgIcon: '#e0f2fe',
