@@ -10,6 +10,7 @@ const path = require('path');
 const http = require('http');
 const { Server } = require("socket.io");
 const webpush = require('web-push');
+
 require('dotenv').config();
 
 const User = require('./models/User');
@@ -154,7 +155,7 @@ app.post('/api/subscribe', auth, async (req, res) => {
     res.status(201).json({});
   } catch (err) { res.status(500).json(err); }
 });
-
+app.use('/api/clubs', require('./routes/clubs'));
 
 // --- ROUTES AUTH & USERS ---
 app.post('/api/auth/login', async (req, res) => {

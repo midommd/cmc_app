@@ -17,8 +17,6 @@ export default function Login({ onLogin }) {
     e.preventDefault();
     setLoading(true);
     try {
-      // Note: Si tu as configuré un proxy, '/api/auth/login' suffit.
-      // Sinon utilise l'URL complète.
       const res = await axios.post('/api/auth/login', formData);
       toast.success('Connexion réussie !');
       onLogin(res.data.token, res.data.user);
@@ -53,8 +51,9 @@ export default function Login({ onLogin }) {
           <div style={styles.iconCircle}>
             <LogIn size={28} color="#2563eb" />
           </div>
-          <h2 style={styles.title}>Espace Ambassadeur</h2>
-          <p style={styles.subtitle}>Connectez-vous pour gérer vos missions</p>
+          <h2 style={styles.title}>Espace Ambassadeur & Clubs
+          </h2>
+          <p style={styles.subtitle}>Connectez-vous pour gérer vos missions et clubs</p>
         </div>
 
         <form onSubmit={onSubmit} style={styles.form}>
@@ -99,14 +98,14 @@ export default function Login({ onLogin }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
               }}
             >
-              ✨ Voir nos Ambassadeurs
+              ✨ Voir la Communauté (Ambassadeurs & Clubs)
             </button>
           </div>
         </form>
         
         <div style={styles.footer}>
           <p style={{fontSize: '0.8rem', color: '#94a3b8'}}>
-            Problème de connexion ? Contactez le Club IT.
+            Problème de connexion ? Contactez le Responsable d'application ou envoyez un email à <a href="mailto:mohammedelmahdidaifi@gmail.com" style={{color: '#2563eb', textDecoration: 'none'}}>Cliquez ici</a>
           </p>
         </div>
       </div>
