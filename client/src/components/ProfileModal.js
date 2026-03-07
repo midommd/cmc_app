@@ -1,54 +1,107 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-// J'ai ajouté 'Linkedin' dans les imports
 import { X, Save, Camera, User, Lock, Mail, Briefcase, Heart, MessageCircle, Linkedin } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '../utils/cropImage';
 
 export default function ProfileModal({ user, targetUser, token, onClose, onUpdateUser }) {
-  // Si 'targetUser' existe, c'est un Admin qui modifie quelqu'un d'autre.
+  // Si targetUser existe, c'est l'Admin. Sinon, c'est l'utilisateur lui-même.
   const isAdminEditing = !!targetUser; 
   const initialData = isAdminEditing ? targetUser : user;
 
   const [formData, setFormData] = useState({
-    nom: '', prenom: '', email: '', password: '',
-    branch: '', motivation: '', hobbies: '', whyCMC: '', photo: '',
-    linkedin: '' // AJOUT DU CHAMP LINKEDIN
+    nom: '', prenom: '', email: '', password: '', branch: '', motivation: '', hobbies: '', whyCMC: '', photo: '', linkedin: '',
+    role: 'ambassadeur', isAmbassadeur: true, isClubLeader: false
   });
   const [loading, setLoading] = useState(false);
 
+  // STATES DU RECADREUR
+  const [imageSrc, setImageSrc] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isCropping, setIsCropping] = useState(false);
+
   useEffect(() => {
+    // 1. On charge les données de base
     if (initialData) {
-      setFormData({
-        nom: initialData.nom || '',
-        prenom: initialData.prenom || '',
-        email: initialData.email || '',
-        password: '', // Toujours vide pour la sécurité
-        branch: initialData.branch || '',
-        motivation: initialData.motivation || '',
-        hobbies: initialData.hobbies || '',
-        whyCMC: initialData.whyCMC || '',
-        photo: initialData.photo || '',
-        linkedin: initialData.linkedin || '' // CHARGEMENT DE LINKEDIN
-      });
+      setFormData(prev => ({
+        ...prev,
+        ...initialData,
+        password: '', // On garde toujours le mot de passe vide à l'affichage
+      }));
     }
-  }, [initialData]);
+
+    // 2. SI C'EST L'UTILISATEUR : On va chercher ses données complètes (Photo, LinkedIn, Citation...)
+    const fetchFullProfile = async () => {
+      if (!isAdminEditing && initialData) {
+        try {
+          // On essaie de récupérer le profil complet via la liste des ambassadeurs
+          const res = await axios.get('/api/users/ambassadors');
+          const myId = initialData._id || initialData.id;
+          const myFullProfile = res.data.find(u => u._id === myId);
+          
+          if (myFullProfile) {
+            setFormData(prev => ({
+              ...prev,
+              ...myFullProfile,
+              password: '' // Toujours vide
+            }));
+          }
+        } catch (err) {
+          console.error("Erreur de chargement du profil complet", err);
+        }
+      }
+    };
+
+    fetchFullProfile();
+  }, [initialData, isAdminEditing]);
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleImageUpload = (e) => {
+  // --- UPLOAD CLOUDINARY AVEC RECADRAGE (Réservé à l'Admin) ---
+  const handleFileSelect = (e) => {
+    if (!isAdminEditing) return; // Sécurité supplémentaire
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5000000) { 
-        toast.error("Image trop lourde (Max 5MB)");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        // Mise à jour immédiate de l'aperçu local
-        setFormData(prev => ({ ...prev, photo: reader.result }));
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (file.size > 5000000) return toast.error("L'image est trop lourde (Max 5MB)");
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      setImageSrc(reader.result);
+      setIsCropping(true);
+    };
+  };
+
+  const onCropComplete = (croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleCropAndUpload = async () => {
+    const loadToast = toast.loading("Upload de la photo en HD...");
+    try {
+      const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
+      const data = new FormData();
+      data.append("file", croppedImageBlob);
+      data.append("upload_preset", "cmc_preset");
+      data.append("cloud_name", "dddxjro92");
+
+      const res = await axios.post("https://api.cloudinary.com/v1_1/dddxjro92/image/upload", data);
+      
+      toast.dismiss(loadToast);
+      toast.success("Photo uploadée et cadrée !");
+      setFormData(prev => ({ ...prev, photo: res.data.secure_url }));
+      
+      setIsCropping(false);
+      setImageSrc(null);
+      setZoom(1);
+    } catch (err) {
+      console.error(err);
+      toast.dismiss(loadToast);
+      toast.error("Erreur lors de l'upload");
     }
   };
 
@@ -56,32 +109,24 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
     e.preventDefault();
     setLoading(true);
     try {
+      const payload = { ...formData };
+      if (!payload.password || payload.password.trim() === '') {
+        delete payload.password; // Ne pas écraser le mdp s'il est vide
+      }
+
       let res;
       if (isAdminEditing) {
-        // Logique ADMIN : Mise à jour complète via ID
-        res = await axios.put(`/api/users/admin-update/${initialData._id}`, formData, {
-          headers: { 'x-auth-token': token }
-        });
+        res = await axios.put(`/api/users/admin-update/${initialData._id}`, payload, { headers: { 'x-auth-token': token } });
         toast.success("Profil mis à jour par l'Admin !");
       } else {
-        // Logique USER : Mise à jour du profil personnel
-        // Note : On envoie tout le formData (y compris photo et linkedin)
-        res = await axios.put('/api/users/profile', formData, {
-          headers: { 'x-auth-token': token }
-        });
+        res = await axios.put('/api/users/profile', payload, { headers: { 'x-auth-token': token } });
         toast.success("Informations mises à jour !");
       }
-      
-      // CRUCIAL : On renvoie les nouvelles données (avec la nouvelle photo) au composant parent (Dashboard)
-      // pour que l'avatar du header se mette à jour instantanément.
       onUpdateUser(res.data);
       onClose();
     } catch (err) {
-      console.error(err);
       toast.error(err.response?.data?.msg || "Erreur sauvegarde profil");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   return (
@@ -90,7 +135,7 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
         <button onClick={onClose} style={styles.closeBtn}><X size={24} /></button>
         
         <div style={styles.header}>
-          <h2 style={styles.title}>{isAdminEditing ? `Édition : ${initialData.prenom}` : 'Mon Compte'}</h2>
+          <h2 style={styles.title}>{isAdminEditing ? `Édition : ${formData.prenom}` : 'Mon Compte'}</h2>
           <p style={styles.subtitle}>{isAdminEditing ? "Contrôle Admin" : "Informations Personnelles"}</p>
         </div>
         
@@ -99,19 +144,19 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
           {/* PHOTO SECTION */}
           <div style={styles.photoSection}>
             <div style={styles.avatarWrapper}>
-              {formData.photo ? (
-                <img src={formData.photo} style={styles.avatar} alt="Profil"/>
-              ) : (
-                <div style={styles.placeholder}>{formData.prenom?.[0]}</div>
-              )}
+              {formData.photo ? <img src={formData.photo} style={styles.avatar} alt="Profil"/> : <div style={styles.placeholder}>{formData.prenom?.[0]}</div>}
               
-              {/* MODIFICATION : J'ai enlevé la condition isAdminEditing pour que l'utilisateur puisse changer sa photo */}
-              <label style={styles.camBtn}>
-                <Camera size={16} color="white" />
-                <input type="file" accept="image/*" onChange={handleImageUpload} hidden />
-              </label>
+              {/* L'icône de l'appareil photo ne s'affiche QUE pour l'Admin */}
+              {isAdminEditing && (
+                <label style={styles.camBtn}>
+                  <Camera size={16} color="white" />
+                  <input type="file" accept="image/*" onChange={handleFileSelect} hidden />
+                </label>
+              )}
             </div>
-            <p style={{fontSize:'0.75rem', color:'#94a3b8', marginTop:'5px'}}>Changer la photo</p>
+            <p style={{fontSize:'0.75rem', color:'#94a3b8', marginTop:'5px'}}>
+              {isAdminEditing ? "Cliquer pour recadrer une photo" : "Photo gérée par l'administration"}
+            </p>
           </div>
 
           <div style={styles.sectionTitle}>Identité</div>
@@ -122,27 +167,66 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
           
           <div style={styles.grid}>
             <div style={styles.field}><label style={styles.label}><Mail size={14}/> Email</label><input name="email" value={formData.email} onChange={handleChange} required style={styles.input} /></div>
-            <div style={styles.field}><label style={styles.label}><Lock size={14}/> Mot de passe</label><input name="password" type="password" placeholder="Changer (optionnel)" value={formData.password} onChange={handleChange} style={styles.input} /></div>
+            <div style={styles.field}><label style={styles.label}><Lock size={14}/> Mot de passe</label><input name="password" type="password" placeholder="Laisser vide pour ne pas changer" value={formData.password} onChange={handleChange} style={styles.input} /></div>
           </div>
 
-          {/* AJOUT DU CHAMP LINKEDIN ICI */}
+          {/* LINKEDIN - Modifiable par l'utilisateur */}
           <div style={styles.field}>
             <label style={styles.label}><Linkedin size={14} color="#0a66c2"/> LinkedIn (URL)</label>
             <input name="linkedin" value={formData.linkedin} onChange={handleChange} placeholder="https://linkedin.com/in/..." style={styles.input} />
           </div>
 
-          {/* EXTRA INFO : Visible pour Admin ou User (selon ton besoin, j'ai laissé ouvert pour que l'user puisse modifier ses infos) */}
           <div style={styles.sectionTitle}>Détails Complémentaires</div>
-          {isAdminEditing ? (
-             <div style={styles.field}><label style={styles.label}><Briefcase size={14}/> Filière (Admin)</label><input name="branch" value={formData.branch} onChange={handleChange} style={styles.input} /></div>
-          ) : null}
           
-          <div style={styles.field}><label style={styles.label}><MessageCircle size={14}/> Citation / Motivation</label><textarea name="whyCMC" value={formData.whyCMC} onChange={handleChange} style={styles.textarea} /></div>
-          <div style={styles.field}><label style={styles.label}><Heart size={14}/> Hobbies</label><textarea name="hobbies" value={formData.hobbies} onChange={handleChange} style={styles.textarea} /></div>
+          {/* FILIÈRE - Modifiable par l'utilisateur ET l'admin */}
+          <div style={styles.field}>
+            <label style={styles.label}><Briefcase size={14}/> Filière</label>
+            <input name="branch" value={formData.branch} onChange={handleChange} placeholder="Ex: Développement Digital" style={styles.input} />
+          </div>
+          
+          {/* CITATION & HOBBIES - Bloqués si ce n'est pas l'Admin */}
+          <div style={styles.field}>
+            <label style={styles.label}><MessageCircle size={14}/> Citation / Motivation</label>
+            <textarea 
+              name="whyCMC" 
+              value={formData.whyCMC} 
+              onChange={handleChange} 
+              disabled={!isAdminEditing} 
+              style={{...styles.textarea, opacity: !isAdminEditing ? 0.6 : 1, cursor: !isAdminEditing ? 'not-allowed' : 'text'}} 
+            />
+          </div>
+          
+          <div style={styles.field}>
+            <label style={styles.label}><Heart size={14}/> Hobbies</label>
+            <textarea 
+              name="hobbies" 
+              value={formData.hobbies} 
+              onChange={handleChange} 
+              disabled={!isAdminEditing} 
+              style={{...styles.textarea, opacity: !isAdminEditing ? 0.6 : 1, cursor: !isAdminEditing ? 'not-allowed' : 'text'}} 
+            />
+          </div>
 
-          <button type="submit" style={styles.saveBtn} disabled={loading}>{loading ? 'Sauvegarde...' : <><Save size={18} /> Enregistrer</>}</button>
+          <button type="submit" style={styles.saveBtn} disabled={loading}>{loading ? 'Sauvegarde...' : <><Save size={18} /> Enregistrer le profil</>}</button>
         </form>
       </motion.div>
+
+      {/* MODALE DE RECADRAGE */}
+      {isCropping && (
+        <div style={{...styles.overlay, zIndex: 3000}}>
+          <div style={{background: 'white', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+            <h3 style={{fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '15px'}}>Ajuster la photo</h3>
+            <div style={{position: 'relative', width: '100%', height: '300px', background: '#333', borderRadius: '12px', overflow: 'hidden', marginBottom: '15px'}}>
+              <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={1} cropShape="round" onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom} />
+            </div>
+            <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={(e) => setZoom(e.target.value)} style={{width: '100%', marginBottom: '20px'}} />
+            <div style={{display: 'flex', gap: '10px', width: '100%'}}>
+              <button onClick={() => { setIsCropping(false); setImageSrc(null); setZoom(1); }} style={{flex: 1, padding: '10px', background: '#e2e8f0', color: '#1e293b', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer'}}>Annuler</button>
+              <button onClick={handleCropAndUpload} style={{flex: 1, padding: '10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer'}}>Valider & Cadrer</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

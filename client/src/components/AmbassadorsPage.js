@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Quote, Briefcase, Users, Trophy, ChevronRight, User as UserIcon, Heart, Linkedin, ExternalLink, Star } from 'lucide-react';
+import { ArrowLeft, Quote, Briefcase, Users, Trophy, ChevronRight, User as UserIcon, Heart, Linkedin, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- MOCK DATA PAR DÉFAUT ---
 const DEFAULT_CLUBS = [
   {
     id: 'sportif', name: 'Pôle Sportif', icon: '🏆', color: 'from-blue-500 to-cyan-500', bgIcon: '#e0f2fe',
@@ -91,38 +90,32 @@ export default function AmbassadorsPage() {
   const [view, setView] = useState('ambassadeurs'); 
   const [ambassadors, setAmbassadors] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // État des clubs (Dynamique vs Mock)
   const [clubsData, setClubsData] = useState(DEFAULT_CLUBS);
-
   const [selectedClub, setSelectedClub] = useState(null);
   const [selectedSub, setSelectedSub] = useState(null);
 
- useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       try {
-        // 1. Fetch Ambassadeurs
         const resUsers = await axios.get('/api/users/ambassadors');
+        // Filtre adouci : Un ambassadeur s'affiche s'il a une vraie photo Cloudinary
         const validAmbassadors = resUsers.data.filter(user => 
-          user.isAmbassadeur !== false && user.photo && user.photo.length > 50 && user.branch && user.whyCMC
+          user.isAmbassadeur !== false && user.photo && user.photo.startsWith('http')
         );
         setAmbassadors(validAmbassadors);
 
-        // 2. Fetch VRAIS CLUBS de MongoDB !
-        const resClubs = await axios.get('/api/clubs');
-        
-        // SWITCH DYNAMIQUE AUTOMATIQUE : 
-        // S'il y a des clubs dans la BDD, on les affiche. Sinon, on montre les données par défaut.
+        // LE BOUCLIER : On donne 3 secondes max à la base de données. Si elle bloque, on passe à la suite.
+        const resClubs = await axios.get('/api/clubs', { timeout: 3000 });
         if (resClubs.data && resClubs.data.length > 0) {
           setClubsData(resClubs.data);
         } else {
           setClubsData(DEFAULT_CLUBS);
         }
-
       } catch (err) {
-        console.error("Erreur de chargement", err);
+        console.error("Le backend met trop de temps ou erreur, chargement des clubs par défaut.");
+        setClubsData(DEFAULT_CLUBS);
       } finally {
-        setLoading(false);
+        setLoading(false); // Force l'arrêt du chargement
       }
     };
     fetchData();
@@ -131,7 +124,6 @@ export default function AmbassadorsPage() {
   const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
   const item = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 60 } } };
 
-  // Composant: Carte d'un Dirigeant
   const PersonCard = ({ title, person, isMain }) => (
     <div style={{ background: isMain ? 'linear-gradient(135deg, #1e293b, #0f172a)' : 'white', borderRadius: '20px', padding: '25px', color: isMain ? 'white' : '#1e293b', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', border: isMain ? 'none' : '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'center' }}>
       <img src={person?.photo || `https://ui-avatars.com/api/?name=${person?.prenom}+${person?.nom}&background=random`} alt="" style={{ width: '90px', height: '90px', borderRadius: '50%', border: isMain ? '3px solid #3b82f6' : '3px solid #e2e8f0', objectFit: 'cover' }} />
@@ -159,16 +151,16 @@ export default function AmbassadorsPage() {
           </div>
         </header>
 
-        {loading ? <div style={styles.loader}>Chargement...</div> : (
+        {loading ? <div style={styles.loader}>Chargement de la communauté...</div> : (
           <AnimatePresence mode="wait">
             
-            {/* VUE AMBASSADEURS */}
             {view === 'ambassadeurs' && (
               <motion.div key="ambs" variants={container} initial="hidden" animate="show" exit={{opacity:0}} style={styles.grid}>
+                {ambassadors.length === 0 && <p style={{gridColumn: '1/-1', textAlign: 'center', color: '#64748b'}}>Aucun ambassadeur avec photo pour le moment.</p>}
                 {ambassadors.map((amb) => (
                   <motion.div key={amb._id} variants={item} style={styles.card} whileHover={{ y: -8 }}>
                     <div style={styles.cardHeader}>
-                      <div style={styles.branchBadge}><Briefcase size={12} style={{marginRight:'4px'}}/> {amb.branch}</div>
+                      <div style={styles.branchBadge}><Briefcase size={12} style={{marginRight:'4px'}}/> {amb.branch || 'Filière'}</div>
                       <div style={styles.imageContainer}><img src={amb.photo} alt={amb.prenom} style={styles.image} /></div>
                     </div>
                     <div style={styles.cardBody}>
@@ -176,7 +168,7 @@ export default function AmbassadorsPage() {
                       {amb.linkedin && <a href={amb.linkedin} target="_blank" rel="noopener noreferrer" style={styles.linkedinBtn}><Linkedin size={14} /> Profil LinkedIn</a>}
                       <div style={styles.quoteContainer}>
                         <Quote size={16} style={styles.quoteIcon} />
-                        <p style={styles.quoteText}>{amb.whyCMC}</p>
+                        <p style={styles.quoteText}>{amb.whyCMC || "Enthousiaste pour cette nouvelle aventure à la CMC !"}</p>
                       </div>
                       {amb.hobbies && (
                         <div style={styles.hobbiesContainer}>
@@ -190,13 +182,12 @@ export default function AmbassadorsPage() {
               </motion.div>
             )}
 
-            {/* VUE CLUBS */}
             {view === 'clubs' && (
               <motion.div key="clubs" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{opacity:0}}>
                 {!selectedClub && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
                     {clubsData.map(club => (
-                      <motion.div key={club.id} whileHover={{ y: -5 }} onClick={() => { setSelectedClub(club); setSelectedSub(null); }} style={styles.clubMainCard}>
+                      <motion.div key={club.id || club._id} whileHover={{ y: -5 }} onClick={() => { setSelectedClub(club); setSelectedSub(null); }} style={styles.clubMainCard}>
                         <div style={{...styles.clubIconBox, background: club.bgIcon}}><span style={{fontSize:'2.5rem'}}>{club.icon}</span></div>
                         <h2 style={{ fontSize: '1.6rem', fontWeight: '800', color: '#1e293b', marginBottom: '10px' }}>{club.name}</h2>
                         <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '20px' }}>{club.description}</p>
@@ -214,7 +205,6 @@ export default function AmbassadorsPage() {
                     <button onClick={() => setSelectedClub(null)} style={styles.returnBtn}><ArrowLeft size={16}/> Retour aux Pôles</button>
 
                     <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
-                      {/* GAUCHE : DIRIGEANT & STAFF */}
                       <div style={{ flex: '1 1 450px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <div style={{ background: `linear-gradient(135deg, ${selectedClub.bgIcon}, white)`, padding: '30px', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
                           <h2 style={{ fontSize: '2rem', fontWeight: '900', margin: '0 0 10px 0', color: '#1e293b' }}>{selectedClub.icon} {selectedClub.name}</h2>
@@ -222,15 +212,13 @@ export default function AmbassadorsPage() {
                         </div>
                         
                         <AnimatePresence mode="wait">
-                          <motion.div key={selectedSub ? selectedSub.id : 'president'} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                            {/* Affichage du Président ou Responsable */}
+                          <motion.div key={selectedSub ? selectedSub.id || selectedSub._id : 'president'} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
                             {selectedSub ? (
                               <PersonCard title={`Responsable ${selectedSub.name}`} person={selectedSub.responsable} isMain={false} />
                             ) : (
                               <PersonCard title="Président(e) du Pôle" person={selectedClub.president} isMain={true} />
                             )}
 
-                            {/* Affichage Créatif du STAFF */}
                             {((selectedSub && selectedSub.staff?.length > 0) || (!selectedSub && selectedClub.staff?.length > 0)) && (
                               <div style={{marginTop: '25px', background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9'}}>
                                 <h4 style={{fontSize: '0.9rem', color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px'}}><Star size={16}/> Membres du Staff</h4>
@@ -251,7 +239,6 @@ export default function AmbassadorsPage() {
                         </AnimatePresence>
                       </div>
 
-                      {/* DROITE : SOUS-CLUBS */}
                       <div style={{ flex: '1 1 500px' }}>
                         {selectedClub.subClubs?.length > 0 && (
                           <>
@@ -261,9 +248,9 @@ export default function AmbassadorsPage() {
                             </h3>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
                               {selectedClub.subClubs?.map(sub => {
-                                const isSelected = selectedSub?.id === sub.id;
+                                const isSelected = selectedSub?.id === sub.id || selectedSub?._id === sub._id;
                                 return (
-                                  <div key={sub.id} onClick={() => setSelectedSub(sub)} style={{ background: isSelected ? '#eff6ff' : 'white', border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0', padding: '20px', borderRadius: '16px', cursor: 'pointer', transition: '0.2s', boxShadow: isSelected ? '0 10px 25px rgba(59,130,246,0.15)' : 'none' }}>
+                                  <div key={sub.id || sub._id} onClick={() => setSelectedSub(sub)} style={{ background: isSelected ? '#eff6ff' : 'white', border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0', padding: '20px', borderRadius: '16px', cursor: 'pointer', transition: '0.2s', boxShadow: isSelected ? '0 10px 25px rgba(59,130,246,0.15)' : 'none' }}>
                                     <div style={{ fontSize: '2rem', marginBottom:'10px' }}>{sub.icon}</div>
                                     <h4 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: isSelected ? '#1d4ed8' : '#1e293b' }}>{sub.name}</h4>
                                     <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>{sub.desc}</p>
@@ -286,7 +273,6 @@ export default function AmbassadorsPage() {
   );
 }
 
-// --- CSS-in-JS STYLES EXACTS ---
 const styles = {
   page: { minHeight: '100vh', background: '#f8fafc', fontFamily: "'Inter', sans-serif" },
   nav: { padding: '20px 40px' },
@@ -310,8 +296,7 @@ const styles = {
   quoteContainer: { position: 'relative', background: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid #f1f5f9', width: '100%' },
   quoteIcon: { position: 'absolute', top: '-10px', left: '20px', color: '#2563eb', background: 'white', padding: '0 5px' },
   quoteText: { fontStyle: 'italic', color: '#475569', fontSize: '0.9rem', lineHeight: '1.6', margin:0 },
-  divider: { height: '1px', background: '#e2e8f0', width: '50%', margin: '20px auto' },
-  hobbiesContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', width: '100%' },
+  hobbiesContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', width: '100%', marginTop: '15px' },
   hobbyLabel: { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' },
   hobbiesText: { color: '#334155', fontWeight: '600', fontSize: '0.9rem', margin: 0 },
   clubMainCard: { background: 'white', borderRadius: '24px', padding: '30px', cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' },
