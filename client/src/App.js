@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
-import LandingPage from './components/LandingPage';
-import AmbassadorsPage from './components/AmbassadorsPage' // Assure-toi d'avoir créé ce fichier
+import LandingPage from './components/LandingPage'; // Gardé normal pour un affichage immédiat
 import './App.css';
+const Login = lazy(() => import('./components/Login'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const AmbassadorsPage = lazy(() => import('./components/AmbassadorsPage'));
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -32,47 +32,53 @@ function App() {
     setUser(newUser);
   };
 
-  // --- RENDU AVEC ROUTEUR ---
+  const FallbackLoader = () => (
+    <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: '#3b82f6', fontWeight: 'bold' }}>
+      Chargement...
+    </div>
+  );
+
   return (
     <Router>
       <div className="App">
-        <Routes>
-          
-          {/* 1. ROUTE ACCUEIL (Landing Page) */}
-          {/* Si déjà connecté, on envoie au Dashboard. Sinon, on montre la belle page d'accueil. */}
-          <Route 
-            path="/" 
-            element={token ? <Navigate to="/dashboard" /> : <LandingPage />} 
-          />
+        {/* Suspense est obligatoire pour dire à React quoi afficher pendant qu'il "Lazy load" une page */}
+        <Suspense fallback={<FallbackLoader />}>
+          <Routes>
+            
+            {/* 1. ROUTE ACCUEIL (Landing Page) */}
+            <Route 
+              path="/" 
+              element={token ? <Navigate to="/dashboard" /> : <LandingPage />} 
+            />
 
-          {/* 2. ROUTE LOGIN */}
-          {/* Si déjà connecté, inutile de se relogguer -> Dashboard. Sinon -> Login. */}
-          <Route 
-            path="/login" 
-            element={token ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} 
-          />
+            {/* 2. ROUTE LOGIN */}
+            <Route 
+              path="/login" 
+              element={token ? <Navigate to="/dashboard" /> : <Login onLogin={handleLogin} />} 
+            />
 
-          {/* 3. ROUTE DASHBOARD (Protégée) */}
-          {/* Si PAS connecté -> Redirection Login. Sinon -> Dashboard. */}
-          <Route 
-            path="/dashboard" 
-            element={token ? (
-              <Dashboard 
-                token={token} 
-                user={user} 
-                onLogout={handleLogout} 
-                onUpdateUser={handleUserUpdate}
-              />
-            ) : (
-              <Navigate to="/login" />
-            )} 
-          />
-          <Route path="/ambassadors" element={<AmbassadorsPage />} />
+            {/* 3. ROUTE DASHBOARD (Protégée) */}
+            <Route 
+              path="/dashboard" 
+              element={token ? (
+                <Dashboard 
+                  token={token} 
+                  user={user} 
+                  onLogout={handleLogout} 
+                  onUpdateUser={handleUserUpdate}
+                />
+              ) : (
+                <Navigate to="/login" />
+              )} 
+            />
+            
+            <Route path="/ambassadors" element={<AmbassadorsPage />} />
 
-          {/* 4. ROUTE PAR DÉFAUT (Si l'utilisateur tape n'importe quoi) */}
-          <Route path="*" element={<Navigate to="/" />} />
+            {/* 4. ROUTE PAR DÉFAUT */}
+            <Route path="*" element={<Navigate to="/" />} />
 
-        </Routes>
+          </Routes>
+        </Suspense>
       </div>
     </Router>
   );
