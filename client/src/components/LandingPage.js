@@ -6,7 +6,7 @@ import {
   LogIn, Users, ArrowRight, ShieldCheck, Heart, 
   MapPin, CalendarDays, Award, Briefcase, GraduationCap, ChevronRight 
 } from 'lucide-react';
-import cmcImg from '../assets/img/cmc-img.webp';
+
 
 // --- COMPOSANT COMPTEUR ANIMÉ ---
 const Counter = ({ value, suffix = "" }) => {
@@ -108,7 +108,7 @@ export default function LandingPage() {
 
             <motion.h1 variants={fadeInUp} className="hero-title">
               Devenez l'image de <br/>
-              <span className="text-gradient">votre campus.</span>
+              <span className="text-gradient">CMC.</span>
             </motion.h1>
             
             <motion.p variants={fadeInUp} className="hero-subtitle">
@@ -139,7 +139,11 @@ export default function LandingPage() {
 
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} className="hero-img-col">
             <div className="image-glow"></div>
-            <img src={cmcImg} alt="Campus CMC" className="hero-image" />
+            <img 
+            src="https://res.cloudinary.com/dddxjro92/image/upload/v1772903649/cmc-img_zm0mfj.webp" 
+            alt="Campus CMC" 
+            className="hero-image" 
+          />
           </motion.div>
         </section>
 
