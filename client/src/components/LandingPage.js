@@ -6,7 +6,7 @@ import {
   LogIn, Users, ArrowRight, ShieldCheck, Heart, 
   MapPin, CalendarDays, Award, Briefcase, GraduationCap, ChevronRight 
 } from 'lucide-react';
-import cmcImg from '../assets/img/cmc.jpeg';
+import cmcImg from '../assets/img/cmc-img.webp';
 
 // --- COMPOSANT COMPTEUR ANIMÉ ---
 const Counter = ({ value, suffix = "" }) => {
