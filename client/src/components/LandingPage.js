@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LogIn, Users, ArrowRight, ShieldCheck, Heart, 
-  MapPin, CalendarDays, Award, Briefcase, GraduationCap, ChevronRight 
+  MapPin, CalendarDays, Award, Briefcase, GraduationCap, ChevronRight, ChevronLeft 
 } from 'lucide-react';
 
+
+const SLIDER_IMAGES = [
+  "https://res.cloudinary.com/dddxjro92/image/upload/v1772903649/cmc-img_zm0mfj.webp",
+  "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80"
+];
 
 // --- COMPOSANT COMPTEUR ANIMÉ ---
 const Counter = ({ value, suffix = "" }) => {
@@ -31,6 +36,24 @@ const Counter = ({ value, suffix = "" }) => {
 export default function LandingPage() {
   const navigate = useNavigate();
   const [ambassadorsCount, setAmbassadorsCount] = useState(0);
+
+  // --- ÉTATS DU SLIDER ---
+  const [[page, direction], setPage] = useState([0, 0]);
+  const imageIndex = Math.abs(page % SLIDER_IMAGES.length);
+
+  // Fonction pour changer de slide
+  const paginate = (newDirection) => {
+    setPage([page + newDirection, newDirection]);
+  };
+
+  // Auto-play toutes les 5 secondes
+  useEffect(() => {
+    const timer = setInterval(() => {
+      paginate(1);
+    }, 5000);
+    // On nettoie le timer si l'utilisateur change de page manuellement pour éviter les sauts bizarres
+    return () => clearInterval(timer);
+  }, [page]);
 
   const academicYear = (() => {
     const now = new Date();
@@ -61,7 +84,28 @@ export default function LandingPage() {
     visible: { opacity: 1, transition: { staggerChildren: 0.15 } }
   };
 
-  // --- ACTIONS DES BOUTONS ---
+  // Configurations d'animation du Slider
+  const sliderVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 1000 : -1000,
+      opacity: 0
+    }),
+    center: {
+      zIndex: 1,
+      x: 0,
+      opacity: 1
+    },
+    exit: (direction) => ({
+      zIndex: 0,
+      x: direction < 0 ? 1000 : -1000,
+      opacity: 0
+    })
+  };
+
+  // Sensibilité du swipe (pour le tactile)
+  const swipeConfidenceThreshold = 10000;
+  const swipePower = (offset, velocity) => Math.abs(offset) * velocity;
+
   const handleCommunityClick = (e) => {
     e.preventDefault();
     navigate('/ambassadors'); 
@@ -86,8 +130,8 @@ export default function LandingPage() {
           <div className="logo-group" onClick={() => window.scrollTo(0,0)}>
             <div className="logo-icon"><Award size={20} color="white" /></div>
             <div className="logo-text">
-              <span className="brand-name">CMC Rabat</span>
-              <span className="brand-sub">Ambassadeurs</span>
+              <span className="brand-name">CMC-RSK</span>
+              <span className="brand-sub">Ambassadeurs & Clubs</span>
             </div>
           </div>
           <button className="nav-login-btn hover-scale" onClick={handleLoginClick}>
@@ -107,12 +151,12 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.h1 variants={fadeInUp} className="hero-title">
-              Devenez l'image de <br/>
-              <span className="text-gradient">CMC.</span>
+              Devenez l'image de <br/>La
+              <span className="text-gradient"> CMC</span>
             </motion.h1>
             
             <motion.p variants={fadeInUp} className="hero-subtitle">
-              Le réseau très sélectif des talents de la Cité des Métiers et des Compétences. 
+              Le réseau très sélectif des talents de la<strong> Cité des Métiers et des Compétences RSK.</strong><br/>
               Représentez l'établissement, développez votre leadership et boostez votre carrière.
             </motion.p>
 
@@ -121,7 +165,7 @@ export default function LandingPage() {
                 Accéder au portail <ArrowRight size={20} />
               </button>
               <button className="secondary-cta hover-scale" onClick={handleCommunityClick}>
-                Voir les Ambassadeurs
+                Voir les Ambassadeurs & Clubs
               </button>
             </motion.div>
 
@@ -137,13 +181,60 @@ export default function LandingPage() {
             </motion.div>
           </motion.div>
 
+          {/* === LE NOUVEAU SLIDER HERO === */}
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} className="hero-img-col">
             <div className="image-glow"></div>
-            <img 
-            src="https://res.cloudinary.com/dddxjro92/image/upload/v1772903649/cmc-img_zm0mfj.webp" 
-            alt="Campus CMC" 
-            className="hero-image" 
-          />
+            
+            <div className="slider-wrapper">
+              <AnimatePresence initial={false} custom={direction}>
+                <motion.img
+                  key={page}
+                  src={SLIDER_IMAGES[imageIndex]}
+                  custom={direction}
+                  variants={sliderVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ x: { type: "spring", stiffness: 300, damping: 30 }, opacity: { duration: 0.2 } }}
+                  drag="x" 
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={1}
+                  onDragEnd={(e, { offset, velocity }) => {
+                    const swipe = swipePower(offset.x, velocity.x);
+                    if (swipe < -swipeConfidenceThreshold) paginate(1);  
+                    else if (swipe > swipeConfidenceThreshold) paginate(-1); 
+                  }}
+                  className="slider-image"
+                  alt="Campus CMC Slider"
+                  draggable="false"
+                />
+              </AnimatePresence>
+
+              {/* Boutons flèches (Fleches) */}
+              <button className="slider-btn slider-btn-left" onClick={() => paginate(-1)}>
+                <ChevronLeft size={24} />
+              </button>
+              <button className="slider-btn slider-btn-right" onClick={() => paginate(1)}>
+                <ChevronRight size={24} />
+              </button>
+
+              {/* Points de navigation (Dots) */}
+              <div className="slider-dots">
+                {SLIDER_IMAGES.map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`slider-dot ${i === imageIndex ? 'active' : ''}`}
+                    onClick={() => {
+                      const newDirection = i > imageIndex ? 1 : -1;
+                      if (i !== imageIndex) {
+                         setPage([page + (i - imageIndex), newDirection]);
+                      }
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+
           </motion.div>
         </section>
 
@@ -178,7 +269,7 @@ export default function LandingPage() {
         {/* === SECTION 3 : BENTO GRID === */}
         <section className="section-padding" style={{paddingBottom: '100px'}}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUp} className="section-header">
-            <h2 className="section-title">Votre rôle sur le campus</h2>
+            <h2 className="section-title">Votre rôle sur l'établissement</h2>
             <p className="section-subtitle">Des responsabilités à forte valeur ajoutée.</p>
           </motion.div>
 
@@ -187,7 +278,7 @@ export default function LandingPage() {
             <motion.div variants={fadeInUp} className="bento-card bento-span-2 bento-white">
               <div className="bento-icon"><MapPin size={24} /></div>
               <h3 className="bento-title">Accueil des délégations</h3>
-              <p className="bento-text">Devenez l'hôte de marque de la CMC. Guidez les visiteurs VIP, orientez les nouveaux inscrits et représentez l'hospitalité de notre institution lors des événements.</p>
+              <p className="bento-text">Devenez l'hôte de marque de la CMC-RSK. Guidez les visiteurs, orientez les nouveaux inscrits et représentez l'hospitalité de notre institution lors des événements.</p>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="bento-card bento-dark">
@@ -205,7 +296,7 @@ export default function LandingPage() {
             <motion.div variants={fadeInUp} className="bento-card bento-span-2 bento-flex">
               <div style={{ flex: 1 }}>
                 <h3 className="bento-title">Curieux de voir qui compose notre réseau ?</h3>
-                <p className="bento-text" style={{marginBottom: '20px'}}>Parcourez notre galerie interactive pour découvrir les profils, les filières et les citations des ambassadeurs qui font la fierté de la CMC Rabat.</p>
+                <p className="bento-text" style={{marginBottom: '20px'}}>Parcourez notre galerie interactive pour découvrir les profils, les filières et les citations des ambassadeurs qui font la fierté de la CMC-RSK.</p>
                 <button className="link-btn hover-scale" onClick={handleCommunityClick}>
                   Explorer les profils Ambassadeurs <ChevronRight size={18} />
                 </button>
@@ -222,12 +313,12 @@ export default function LandingPage() {
         <div className="footer-content">
           <div className="footer-brand">
             <Award size={20} color="#3b82f6" />
-            <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#1e293b' }}>CMC Rabat</span>
+            <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#1e293b' }}>CMC-RSK</span>
           </div>
           <p className="footer-text">
             © {academicYear} Programme Ambassadeurs. Interface conçue et développée par <br/>
             <span style={{ color: '#1e293b', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop:'5px' }}>
-              Mohammed ElMahdi Daifi <Heart size={14} color="#ef4444" fill="#ef4444" /> DEVOWFS-205
+              Mohammed ElMahdi Daifi <Heart size={14} color="#ef4444" fill="#ef4444" /> DEVOWFS-205 (Excellence)
             </span>
           </p>
         </div>
@@ -280,7 +371,77 @@ export default function LandingPage() {
         .stat-text { font-size: 0.85rem; color: #475569; }
 
         .image-glow { position: absolute; top: 5%; left: 5%; right: 5%; bottom: 10%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); filter: blur(50px); opacity: 0.25; border-radius: 30px; z-index: -1; }
-        .hero-image { width: 100%; max-width: 500px; height: auto; border-radius: 30px; border: 6px solid white; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15); object-fit: cover; }
+        
+        /* ================= NOUVEAU CSS DU SLIDER ================= */
+        .slider-wrapper {
+        position: relative;
+        width: 100%;
+        max-width: 600px; /* 👈 1. On l'agrandit globalement */
+        aspect-ratio: 4/3; /* 👈 2. Le vrai secret : 4/3 donne une belle hauteur paysage */
+        border-radius: 30px;
+        border: 6px solid white;
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f1f5f9;
+      }
+
+        .slider-image {
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 24px; /* Arrondi interne */
+          cursor: grab;
+        }
+        .slider-image:active { cursor: grabbing; }
+
+        .slider-btn {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(8px);
+          border: none;
+          width: 45px;
+          height: 45px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 10;
+          color: #1e293b;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+          transition: all 0.2s ease;
+        }
+        .slider-btn:hover { background: white; transform: translateY(-50%) scale(1.1); }
+        .slider-btn-left { left: 15px; }
+        .slider-btn-right { right: 15px; }
+
+        .slider-dots {
+          position: absolute;
+          bottom: 20px;
+          display: flex;
+          gap: 10px;
+          z-index: 10;
+        }
+        .slider-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.4);
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .slider-dot.active {
+          background: white;
+          transform: scale(1.4);
+        }
+        /* ================= FIN CSS SLIDER ================= */
 
         /* Benefits Grid */
         .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
@@ -315,9 +476,10 @@ export default function LandingPage() {
         .footer-brand { display: flex; align-items: center; gap: 10px; }
         .footer-text { text-align: right; font-size: 0.85rem; color: #64748b; margin: 0; line-height: 1.6; }
 
-        /* MEDIA QUERIES (Correction absolue du Layout sur Mobile) */
+        /* MEDIA QUERIES */
         @media (max-width: 992px) {
           .hero-layout { flex-direction: column; text-align: center; padding-top: 20px; gap: 50px; }
+          .hero-img-col { width: 100%; margin-top: 20px; } /* 👈 LA CORRECTION EST ICI */
           .hero-subtitle { margin: 0 auto; }
           .cta-group { justify-content: center; width: 100%; }
           .stats-group { justify-content: center; width: 100%; }
