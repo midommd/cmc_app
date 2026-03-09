@@ -116,6 +116,42 @@ io.on("connection", (socket) => {
     });
   });
 
+  // ==========================================
+  // NOUVEAU : GESTION DU TYPING (EN TRAIN D'ÉCRIRE)
+  // ==========================================
+  socket.on("typing", ({ senderId, receiverId, receivers, conversationId }) => {
+    if (receivers && receivers.length > 0) {
+      receivers.forEach(recId => {
+        const user = getUser(recId);
+        if (user) {
+          io.to(user.socketId).emit("typing", { senderId, conversationId });
+        }
+      });
+    } else if (receiverId) {
+      const user = getUser(receiverId);
+      if (user) {
+        io.to(user.socketId).emit("typing", { senderId, conversationId });
+      }
+    }
+  });
+
+  socket.on("stopTyping", ({ senderId, receiverId, receivers, conversationId }) => {
+    if (receivers && receivers.length > 0) {
+      receivers.forEach(recId => {
+        const user = getUser(recId);
+        if (user) {
+          io.to(user.socketId).emit("stopTyping", { senderId, conversationId });
+        }
+      });
+    } else if (receiverId) {
+      const user = getUser(receiverId);
+      if (user) {
+        io.to(user.socketId).emit("stopTyping", { senderId, conversationId });
+      }
+    }
+  });
+  // ==========================================
+
   socket.on("disconnect", () => {
     removeUser(socket.id);
     io.emit("getUsers", users);
