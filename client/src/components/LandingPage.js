@@ -2,15 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LogIn, Users, ArrowRight, ShieldCheck, Heart, 
-  MapPin, CalendarDays, Award, Briefcase, GraduationCap, ChevronRight, ChevronLeft 
-} from 'lucide-react';
-
+import { LogIn, Users, ArrowRight, ShieldCheck, Heart, MapPin, CalendarDays, Award, Briefcase, GraduationCap, ChevronRight, ChevronLeft, ArrowUp } from 'lucide-react';
 
 const SLIDER_IMAGES = [
   "https://res.cloudinary.com/dddxjro92/image/upload/v1772903649/cmc-img_zm0mfj.webp",
-  "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80"
+  "https://res.cloudinary.com/dddxjro92/image/upload/v1773061990/ancvpejsa5quu3zfx0pv.png"
 ];
 
 // --- COMPOSANT COMPTEUR ANIMÉ ---
@@ -40,6 +36,25 @@ export default function LandingPage() {
   // --- ÉTATS DU SLIDER ---
   const [[page, direction], setPage] = useState([0, 0]);
   const imageIndex = Math.abs(page % SLIDER_IMAGES.length);
+
+  // --- ÉTAT BOUTON RETOUR EN HAUT ---
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Fonction pour changer de slide
   const paginate = (newDirection) => {
@@ -324,10 +339,21 @@ export default function LandingPage() {
         </div>
       </footer>
 
+      {/* BOUTON SCROLL TO TOP */}
+      <button 
+        className={`scroll-to-top ${showScrollTop ? 'visible' : ''}`} 
+        onClick={scrollToTop}
+        title="Retour en haut"
+      >
+        <ArrowUp size={24} />
+      </button>
+
       {/* ================= CSS RESPONSIVE & LAYOUT ================= */}
       <style>{`
         * { box-sizing: border-box; }
         
+        html { scroll-behavior: smooth; }
+
         .landing-wrapper { min-height: 100vh; background-color: #f8fafc; font-family: 'Inter', system-ui, sans-serif; overflow-x: hidden; position: relative; }
         
         button { position: relative; z-index: 50; }
@@ -374,26 +400,26 @@ export default function LandingPage() {
         
         /* ================= NOUVEAU CSS DU SLIDER ================= */
         .slider-wrapper {
-        position: relative;
-        width: 100%;
-        max-width: 600px; /* 👈 1. On l'agrandit globalement */
-        aspect-ratio: 4/3; /* 👈 2. Le vrai secret : 4/3 donne une belle hauteur paysage */
-        border-radius: 30px;
-        border: 6px solid white;
-        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
-        overflow: hidden;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #f1f5f9;
-      }
+          position: relative;
+          width: 100%;
+          max-width: 600px;
+          aspect-ratio: 4/3; 
+          border-radius: 30px;
+          border: 6px solid white;
+          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #f1f5f9;
+        }
 
         .slider-image {
           position: absolute;
           width: 100%;
           height: 100%;
           object-fit: cover;
-          border-radius: 24px; /* Arrondi interne */
+          border-radius: 24px;
           cursor: grab;
         }
         .slider-image:active { cursor: grabbing; }
@@ -443,7 +469,7 @@ export default function LandingPage() {
         }
         /* ================= FIN CSS SLIDER ================= */
 
-        /* Benefits Grid */
+        /* Benefits Grid (Mise en page classique, sans scroll horizontal) */
         .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
         .benefit-card { background: white; padding: 40px 30px; border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.03); text-align: center; display: flex; flex-direction: column; align-items: center; }
         .benefit-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
@@ -476,10 +502,42 @@ export default function LandingPage() {
         .footer-brand { display: flex; align-items: center; gap: 10px; }
         .footer-text { text-align: right; font-size: 0.85rem; color: #64748b; margin: 0; line-height: 1.6; }
 
+        /* BOUTON SCROLL TO TOP CSS */
+        .scroll-to-top {
+          position: fixed;
+          bottom: 30px;
+          right: 30px;
+          background: #2563eb;
+          color: white;
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          border: none;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 10px 25px rgba(37,99,235,0.4);
+          cursor: pointer;
+          z-index: 1000;
+          opacity: 0;
+          transform: translateY(20px) scale(0.8);
+          pointer-events: none;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .scroll-to-top.visible {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          pointer-events: auto;
+        }
+        .scroll-to-top:hover {
+          background: #1d4ed8;
+          transform: translateY(-5px) scale(1.1);
+        }
+
         /* MEDIA QUERIES */
         @media (max-width: 992px) {
           .hero-layout { flex-direction: column; text-align: center; padding-top: 20px; gap: 50px; }
-          .hero-img-col { width: 100%; margin-top: 20px; } /* 👈 LA CORRECTION EST ICI */
+          .hero-img-col { width: 100%; margin-top: 20px; }
           .hero-subtitle { margin: 0 auto; }
           .cta-group { justify-content: center; width: 100%; }
           .stats-group { justify-content: center; width: 100%; }
@@ -499,6 +557,9 @@ export default function LandingPage() {
           .bento-card { padding: 25px; }
           .footer-content { flex-direction: column; text-align: center; justify-content: center; }
           .footer-text { text-align: center; }
+          
+          /* Ajustement bouton scroll sur très petit mobile */
+          .scroll-to-top { bottom: 20px; right: 20px; width: 45px; height: 45px; }
         }
       `}</style>
     </div>
