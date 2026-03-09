@@ -56,11 +56,11 @@ export default function AdminUserManagement({ token }) {
 
   const handleCreateClub = async () => {
     try {
-      const newClub = { name: "Nouveau Pôle", icon: "⭐", bgIcon: "#e2e8f0", description: "", president: {}, staff: [], subClubs: [] };
+      const newClub = { name: "Nouveau Club", icon: "⭐", bgIcon: "#e2e8f0", description: "", president: {}, staff: [], subClubs: [] };
       const res = await axios.post('/api/clubs', newClub, { headers: { 'x-auth-token': token } });
       setClubs([...clubs, res.data]);
       setEditingClub(res.data);
-      toast.success("Pôle créé, à vous de l'éditer !");
+      toast.success("Club créé, à vous de l'éditer !");
     } catch (err) { toast.error("Erreur de création"); }
   };
 
@@ -69,17 +69,17 @@ export default function AdminUserManagement({ token }) {
     try {
       const res = await axios.put(`/api/clubs/${editingClub._id}`, editingClub, { headers: { 'x-auth-token': token } });
       setClubs(clubs.map(c => c._id === res.data._id ? res.data : c));
-      toast.dismiss(load); toast.success("Pôle sauvegardé !");
+      toast.dismiss(load); toast.success("Club sauvegardé !");
       setEditingClub(null);
     } catch (err) { toast.dismiss(load); toast.error("Erreur de sauvegarde"); }
   };
 
   const handleDeleteClub = async (id) => {
-    if(!window.confirm("Supprimer définitivement ce pôle ?")) return;
+    if(!window.confirm("Supprimer définitivement ce Club ?")) return;
     try {
       await axios.delete(`/api/clubs/${id}`, { headers: { 'x-auth-token': token } });
       setClubs(clubs.filter(c => c._id !== id));
-      toast.success("Pôle supprimé");
+      toast.success("Club supprimé");
     } catch (err) { toast.error("Erreur"); }
   };
 
@@ -193,8 +193,8 @@ export default function AdminUserManagement({ token }) {
       {activeTab === 'clubs' && !editingClub && (
         <div style={styles.contentWrapper}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'}}>
-            <h2 style={{margin: 0, color: '#1e293b'}}>Clubs & Pôles de la BDD</h2>
-            <button onClick={handleCreateClub} style={{display: 'flex', alignItems: 'center', gap: '8px', background: '#10b981', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer'}}><PlusCircle size={18} /> Créer un Pôle</button>
+            <h2 style={{margin: 0, color: '#1e293b'}}>Clubs de la BDD</h2>
+            <button onClick={handleCreateClub} style={{display: 'flex', alignItems: 'center', gap: '8px', background: '#10b981', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer'}}><PlusCircle size={18} /> Créer un Club</button>
           </div>
           
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px'}}>
@@ -210,7 +210,7 @@ export default function AdminUserManagement({ token }) {
                 </div>
               </div>
             ))}
-            {clubs.length === 0 && <p style={{color: '#94a3b8', fontStyle: 'italic', gridColumn: '1/-1'}}>Aucun pôle dans la base de données. Créez-en un !</p>}
+            {clubs.length === 0 && <p style={{color: '#94a3b8', fontStyle: 'italic', gridColumn: '1/-1'}}>Aucun Club dans la base de données. Créez-en un !</p>}
           </div>
         </div>
       )}
@@ -218,7 +218,7 @@ export default function AdminUserManagement({ token }) {
       {editingClub && (
         <div style={{background: 'white', borderRadius: '20px', padding: '30px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.05)'}}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '1px solid #f1f5f9', paddingBottom: '15px'}}>
-            <h2 style={{margin: 0, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px'}}><Edit size={24} color="#2563eb"/> CMS Pôle : {editingClub.name}</h2>
+            <h2 style={{margin: 0, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px'}}><Edit size={24} color="#2563eb"/> CMC Club : {editingClub.name}</h2>
             <div style={{display: 'flex', gap: '10px'}}>
               <button onClick={() => setEditingClub(null)} style={{background: 'transparent', border: '1px solid #cbd5e1', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold'}}>Annuler</button>
               <button onClick={handleSaveClub} style={{background: '#2563eb', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'}}><Save size={18}/> Enregistrer dans BDD</button>
@@ -227,31 +227,31 @@ export default function AdminUserManagement({ token }) {
 
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px'}}>
             <div>
-              <h3 style={styles.cmsSectionTitle}>1. Identité du Pôle</h3>
+              <h3 style={styles.CMCSectionTitle}>1. Identité du Club</h3>
               <div style={{display: 'flex', gap: '15px', marginBottom: '15px'}}>
-                <input type="text" value={editingClub.icon} onChange={(e) => setEditingClub({...editingClub, icon: e.target.value})} title="Emoji" style={{...styles.cmsInput, width: '60px', textAlign: 'center', fontSize: '1.5rem'}} />
-                <input type="text" value={editingClub.name} onChange={(e) => setEditingClub({...editingClub, name: e.target.value})} placeholder="Nom du Pôle" style={{...styles.cmsInput, flex: 1, fontWeight: 'bold'}} />
+                <input type="text" value={editingClub.icon} onChange={(e) => setEditingClub({...editingClub, icon: e.target.value})} title="Emoji" style={{...styles.CMCInput, width: '60px', textAlign: 'center', fontSize: '1.5rem'}} />
+                <input type="text" value={editingClub.name} onChange={(e) => setEditingClub({...editingClub, name: e.target.value})} placeholder="Nom du Club" style={{...styles.CMCInput, flex: 1, fontWeight: 'bold'}} />
                 <input type="color" value={editingClub.bgIcon} onChange={(e) => setEditingClub({...editingClub, bgIcon: e.target.value})} style={{width: '50px', height: '45px', border: 'none', borderRadius: '8px', cursor: 'pointer'}} title="Couleur de fond" />
               </div>
-              <textarea value={editingClub.description} onChange={(e) => setEditingClub({...editingClub, description: e.target.value})} placeholder="Description du Pôle" style={{...styles.cmsInput, width: '100%', minHeight: '80px', marginBottom: '30px'}} />
+              <textarea value={editingClub.description} onChange={(e) => setEditingClub({...editingClub, description: e.target.value})} placeholder="Description du Club" style={{...styles.CMCInput, width: '100%', minHeight: '80px', marginBottom: '30px'}} />
 
-              <h3 style={styles.cmsSectionTitle}>2. Profil du Président</h3>
+              <h3 style={styles.CMCSectionTitle}>2. Profil du Président</h3>
               <div style={{background: '#f8fafc', padding: '20px', borderRadius: '16px', border: '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'flex-start'}}>
                 <PhotoUpload photo={editingClub.president?.photo} label="Photo" onUpload={(url) => setEditingClub({...editingClub, president: {...editingClub.president, photo: url}})} />
                 <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '10px'}}>
                   <div style={{display: 'flex', gap: '10px'}}>
-                    <input type="text" value={editingClub.president?.prenom || ''} onChange={(e) => setEditingClub({...editingClub, president: {...editingClub.president, prenom: e.target.value}})} placeholder="Prénom" style={styles.cmsInput} />
-                    <input type="text" value={editingClub.president?.nom || ''} onChange={(e) => setEditingClub({...editingClub, president: {...editingClub.president, nom: e.target.value}})} placeholder="Nom" style={styles.cmsInput} />
+                    <input type="text" value={editingClub.president?.prenom || ''} onChange={(e) => setEditingClub({...editingClub, president: {...editingClub.president, prenom: e.target.value}})} placeholder="Prénom" style={styles.CMCInput} />
+                    <input type="text" value={editingClub.president?.nom || ''} onChange={(e) => setEditingClub({...editingClub, president: {...editingClub.president, nom: e.target.value}})} placeholder="Nom" style={styles.CMCInput} />
                   </div>
-                  <input type="text" value={editingClub.president?.filiere || ''} onChange={(e) => setEditingClub({...editingClub, president: {...editingClub.president, filiere: e.target.value}})} placeholder="Filière" style={styles.cmsInput} />
-                  <textarea value={editingClub.president?.msg || ''} onChange={(e) => setEditingClub({...editingClub, president: {...editingClub.president, msg: e.target.value}})} placeholder="Message d'accueil (Citation)" style={{...styles.cmsInput, minHeight: '60px'}} />
+                  <input type="text" value={editingClub.president?.filiere || ''} onChange={(e) => setEditingClub({...editingClub, president: {...editingClub.president, filiere: e.target.value}})} placeholder="Filière" style={styles.CMCInput} />
+                  <textarea value={editingClub.president?.msg || ''} onChange={(e) => setEditingClub({...editingClub, president: {...editingClub.president, msg: e.target.value}})} placeholder="Message d'accueil (Citation)" style={{...styles.CMCInput, minHeight: '60px'}} />
                 </div>
               </div>
             </div>
 
             <div>
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
-                <h3 style={{...styles.cmsSectionTitle, margin: 0}}>3. Staff du Pôle</h3>
+                <h3 style={{...styles.CMCSectionTitle, margin: 0}}>3. Staff du Club</h3>
                 <button onClick={() => setEditingClub({...editingClub, staff: [...editingClub.staff, {nom:'', prenom:'', role:'', photo:''}]})} style={styles.smallAddBtn}>+ Ajouter Staff</button>
               </div>
               <div style={{display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '30px'}}>
@@ -260,10 +260,10 @@ export default function AdminUserManagement({ token }) {
                     <PhotoUpload photo={member.photo} label="Photo" onUpload={(url) => { const nS = [...editingClub.staff]; nS[i].photo = url; setEditingClub({...editingClub, staff: nS}); }} />
                     <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '5px'}}>
                       <div style={{display: 'flex', gap: '5px'}}>
-                        <input type="text" value={member.prenom} onChange={(e) => { const nS = [...editingClub.staff]; nS[i].prenom = e.target.value; setEditingClub({...editingClub, staff: nS}); }} placeholder="Prénom" style={styles.cmsInputSmall} />
-                        <input type="text" value={member.nom} onChange={(e) => { const nS = [...editingClub.staff]; nS[i].nom = e.target.value; setEditingClub({...editingClub, staff: nS}); }} placeholder="Nom" style={styles.cmsInputSmall} />
+                        <input type="text" value={member.prenom} onChange={(e) => { const nS = [...editingClub.staff]; nS[i].prenom = e.target.value; setEditingClub({...editingClub, staff: nS}); }} placeholder="Prénom" style={styles.CMCInputSmall} />
+                        <input type="text" value={member.nom} onChange={(e) => { const nS = [...editingClub.staff]; nS[i].nom = e.target.value; setEditingClub({...editingClub, staff: nS}); }} placeholder="Nom" style={styles.CMCInputSmall} />
                       </div>
-                      <input type="text" value={member.role} onChange={(e) => { const nS = [...editingClub.staff]; nS[i].role = e.target.value; setEditingClub({...editingClub, staff: nS}); }} placeholder="Rôle (ex: Trésorier)" style={styles.cmsInputSmall} />
+                      <input type="text" value={member.role} onChange={(e) => { const nS = [...editingClub.staff]; nS[i].role = e.target.value; setEditingClub({...editingClub, staff: nS}); }} placeholder="Rôle (ex: Trésorier)" style={styles.CMCInputSmall} />
                     </div>
                     <button onClick={() => { const nS = editingClub.staff.filter((_, idx) => idx !== i); setEditingClub({...editingClub, staff: nS}); }} style={{background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer'}}><X size={18}/></button>
                   </div>
@@ -272,7 +272,7 @@ export default function AdminUserManagement({ token }) {
               </div>
 
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px'}}>
-                <h3 style={{...styles.cmsSectionTitle, margin: 0}}>4. Sous-Clubs / Activités</h3>
+                <h3 style={{...styles.CMCSectionTitle, margin: 0}}>4. Sous-Clubs / Activités</h3>
                 <button onClick={() => setEditingClub({...editingClub, subClubs: [...editingClub.subClubs, {name:'', icon:'⭐', desc:'', responsable:{}}]})} style={styles.smallAddBtn}>+ Ajouter Sous-club</button>
               </div>
               <div style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
@@ -281,16 +281,16 @@ export default function AdminUserManagement({ token }) {
                     <button onClick={() => { const nSC = editingClub.subClubs.filter((_, idx) => idx !== i); setEditingClub({...editingClub, subClubs: nSC}); }} style={{position: 'absolute', top: '10px', right: '10px', background: '#fef2f2', border: 'none', color: '#ef4444', borderRadius: '50%', padding: '5px', cursor: 'pointer'}}><X size={14}/></button>
                     
                     <div style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
-                       <input type="text" value={sub.icon} onChange={(e) => { const nSC = [...editingClub.subClubs]; nSC[i].icon = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} style={{...styles.cmsInputSmall, width: '40px', textAlign: 'center'}} title="Emoji"/>
-                       <input type="text" value={sub.name} onChange={(e) => { const nSC = [...editingClub.subClubs]; nSC[i].name = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} placeholder="Nom du sous-club" style={{...styles.cmsInputSmall, flex: 1, fontWeight: 'bold'}}/>
+                       <input type="text" value={sub.icon} onChange={(e) => { const nSC = [...editingClub.subClubs]; nSC[i].icon = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} style={{...styles.CMCInputSmall, width: '40px', textAlign: 'center'}} title="Emoji"/>
+                       <input type="text" value={sub.name} onChange={(e) => { const nSC = [...editingClub.subClubs]; nSC[i].name = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} placeholder="Nom du sous-club" style={{...styles.CMCInputSmall, flex: 1, fontWeight: 'bold'}}/>
                     </div>
-                    <input type="text" value={sub.desc} onChange={(e) => { const nSC = [...editingClub.subClubs]; nSC[i].desc = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} placeholder="Description" style={{...styles.cmsInputSmall, width: '100%', marginBottom: '10px'}}/>
+                    <input type="text" value={sub.desc} onChange={(e) => { const nSC = [...editingClub.subClubs]; nSC[i].desc = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} placeholder="Description" style={{...styles.CMCInputSmall, width: '100%', marginBottom: '10px'}}/>
                     
                     <div style={{borderTop: '1px dashed #cbd5e1', paddingTop: '10px', display: 'flex', gap: '10px', alignItems: 'center'}}>
                       <PhotoUpload photo={sub.responsable?.photo} label="Resp." onUpload={(url) => { const nSC = [...editingClub.subClubs]; if(!nSC[i].responsable) nSC[i].responsable = {}; nSC[i].responsable.photo = url; setEditingClub({...editingClub, subClubs: nSC}); }} />
                       <div style={{flex: 1, display: 'flex', flexDirection: 'column', gap: '5px'}}>
-                        <input type="text" value={sub.responsable?.prenom || ''} onChange={(e) => { const nSC = [...editingClub.subClubs]; if(!nSC[i].responsable) nSC[i].responsable = {}; nSC[i].responsable.prenom = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} placeholder="Prénom Responsable" style={styles.cmsInputSmall}/>
-                        <input type="text" value={sub.responsable?.nom || ''} onChange={(e) => { const nSC = [...editingClub.subClubs]; if(!nSC[i].responsable) nSC[i].responsable = {}; nSC[i].responsable.nom = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} placeholder="Nom Responsable" style={styles.cmsInputSmall}/>
+                        <input type="text" value={sub.responsable?.prenom || ''} onChange={(e) => { const nSC = [...editingClub.subClubs]; if(!nSC[i].responsable) nSC[i].responsable = {}; nSC[i].responsable.prenom = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} placeholder="Prénom Responsable" style={styles.CMCInputSmall}/>
+                        <input type="text" value={sub.responsable?.nom || ''} onChange={(e) => { const nSC = [...editingClub.subClubs]; if(!nSC[i].responsable) nSC[i].responsable = {}; nSC[i].responsable.nom = e.target.value; setEditingClub({...editingClub, subClubs: nSC}); }} placeholder="Nom Responsable" style={styles.CMCInputSmall}/>
                       </div>
                     </div>
                   </div>
@@ -344,9 +344,9 @@ const styles = {
   deleteBtn: { background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer' },
   editBtn: { background: '#eff6ff', color: '#2563eb', border: '1px solid #dbeafe', padding: '6px 12px', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: '600', fontSize: '0.8rem' },
   
-  cmsSectionTitle: { fontSize: '1rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px' },
-  cmsInput: { padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' },
-  cmsInputSmall: { padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', width: '100%', boxSizing: 'border-box' },
+  CMCSectionTitle: { fontSize: '1rem', fontWeight: 'bold', color: '#1e293b', marginBottom: '15px', borderBottom: '2px solid #e2e8f0', paddingBottom: '5px' },
+  CMCInput: { padding: '12px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.9rem', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' },
+  CMCInputSmall: { padding: '8px 10px', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', width: '100%', boxSizing: 'border-box' },
   smallAddBtn: { background: '#f1f5f9', border: '1px solid #cbd5e1', color: '#475569', padding: '5px 10px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 'bold', cursor: 'pointer' },
 
   modalOverlay: { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' },

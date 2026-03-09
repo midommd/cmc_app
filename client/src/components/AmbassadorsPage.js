@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Quote, Briefcase, Users, Trophy, ChevronRight, User as UserIcon, Heart, Linkedin, Star } from 'lucide-react';
+import { ArrowLeft, Quote, Briefcase, Users, Trophy, ChevronRight, User as UserIcon, Heart, Linkedin, Star, ArrowUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DEFAULT_CLUBS = [
   {
-    id: 'sportif', name: 'Pôle Sportif', icon: '🏆', color: 'from-blue-500 to-cyan-500', bgIcon: '#e0f2fe',
+    id: 'sportif', name: 'Club Sportif', icon: '🏆', color: 'from-blue-500 to-cyan-500', bgIcon: '#e0f2fe',
     description: "L'élite sportive de la CMC. Esprit de compétition, santé et cohésion d'équipe.",
     president: { nom: 'El Fassi', prenom: 'Amine', filiere: 'Développement Digital', photo: 'https://i.pravatar.cc/150?img=11', msg: "Le sport forge le caractère et unit les talents." },
     staff: [
       { nom: 'Benali', prenom: 'Sara', role: 'Secrétaire Générale', photo: 'https://i.pravatar.cc/150?img=5' },
       { nom: 'Zouhair', prenom: 'Karim', role: 'Responsable Matériel', photo: 'https://i.pravatar.cc/150?img=12' },
-      { nom: 'Moussaif', prenom: 'Leila', role: 'Trésorière', photo: 'https://i.pravatar.cc/150?img=9' }
+      { nom: 'Moussaif', prenom: 'Leila', role: 'Trésorière', photo: 'https://i.pravatar.cc/150?img=9' },
+      { nom: 'Taoufiq', prenom: 'Youssef', role: 'Coach', photo: 'https://i.pravatar.cc/150?img=13' },
+      { nom: 'Naciri', prenom: 'Aya', role: 'Nutritionniste', photo: 'https://i.pravatar.cc/150?img=14' }
     ],
     subClubs: [
       { id: 'foot', name: 'Football Club', icon: '⚽', desc: 'Entraînements tactiques et tournois inter-écoles.', responsable: { nom: 'Hakimi', prenom: 'Yassine', filiere: 'Gestion', msg: "La gagne est dans notre ADN." } },
@@ -22,7 +24,7 @@ const DEFAULT_CLUBS = [
     ]
   },
   {
-    id: 'culturel', name: 'Pôle Culturel', icon: '🎭', color: 'from-purple-500 to-pink-500', bgIcon: '#fae8ff',
+    id: 'culturel', name: 'Club Culturel', icon: '🎭', color: 'from-purple-500 to-pink-500', bgIcon: '#fae8ff',
     description: "Le cœur artistique du campus. Théâtre, musique, littérature et événements.",
     president: { nom: 'Chraibi', prenom: 'Lina', filiere: 'Infographie', photo: 'https://i.pravatar.cc/150?img=47', msg: "L'art est le miroir de notre âme collective." },
     staff: [
@@ -38,7 +40,7 @@ const DEFAULT_CLUBS = [
     ]
   },
   {
-    id: 'innovation', name: 'Pôle Innovation', icon: '💡', color: 'from-orange-500 to-red-500', bgIcon: '#ffedd5',
+    id: 'innovation', name: 'Club Innovation', icon: '💡', color: 'from-orange-500 to-red-500', bgIcon: '#ffedd5',
     description: "Créativité digitale, design futuriste et création de contenu multimédia.",
     president: { nom: 'Ouazzani', prenom: 'Ayoub', filiere: 'Dev Multimédia', photo: 'https://i.pravatar.cc/150?img=68', msg: "Innover, c'est transformer l'impossible en digital." },
     staff: [
@@ -53,7 +55,7 @@ const DEFAULT_CLUBS = [
     ]
   },
   {
-    id: 'robotique', name: 'Pôle Robotique', icon: '🤖', color: 'from-indigo-500 to-blue-600', bgIcon: '#e0e7ff',
+    id: 'robotique', name: 'Club Robotique', icon: '🤖', color: 'from-indigo-500 to-blue-600', bgIcon: '#e0e7ff',
     description: "L'ingénierie de demain : électronique, drones et intelligence artificielle.",
     president: { nom: 'Mido', prenom: 'Dev', filiere: 'Génie Électrique', photo: 'https://i.pravatar.cc/150?img=14', msg: "Coder le futur, un circuit à la fois." },
     staff: [
@@ -63,7 +65,7 @@ const DEFAULT_CLUBS = [
     subClubs: []
   },
   {
-    id: 'environnement', name: 'Pôle Environnement', icon: '🍀', color: 'from-emerald-500 to-green-500', bgIcon: '#d1fae5',
+    id: 'environnement', name: 'Club Environnement', icon: '🍀', color: 'from-emerald-500 to-green-500', bgIcon: '#d1fae5',
     description: "Agissons pour une CMC éco-responsable. Écologie et développement durable.",
     president: { nom: 'Mansour', prenom: 'Ilyas', filiere: 'QSE', photo: 'https://i.pravatar.cc/150?img=15', msg: "La terre ne nous appartient pas, nous l'empruntons." },
     staff: [
@@ -74,7 +76,7 @@ const DEFAULT_CLUBS = [
     ]
   },
   {
-    id: 'citoyennete', name: 'Pôle Citoyenneté', icon: '🤝', color: 'from-yellow-400 to-orange-500', bgIcon: '#fef3c7',
+    id: 'citoyennete', name: 'Club Citoyenneté', icon: '🤝', color: 'from-yellow-400 to-orange-500', bgIcon: '#fef3c7',
     description: "Bénévolat, actions caritatives et impact social positif.",
     president: { nom: 'Kabbaj', prenom: 'Salma', filiere: 'Gestion de PME', photo: 'https://i.pravatar.cc/150?img=26', msg: "Donner de son temps, c'est recevoir du bonheur." },
     staff: [
@@ -94,17 +96,29 @@ export default function AmbassadorsPage() {
   const [selectedClub, setSelectedClub] = useState(null);
   const [selectedSub, setSelectedSub] = useState(null);
 
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         const resUsers = await axios.get('/api/users/ambassadors');
-        // Filtre adouci : Un ambassadeur s'affiche s'il a une vraie photo Cloudinary
         const validAmbassadors = resUsers.data.filter(user => 
           user.isAmbassadeur !== false && user.photo && user.photo.startsWith('http')
         );
         setAmbassadors(validAmbassadors);
 
-        // LE BOUCLIER : On donne 3 secondes max à la base de données. Si elle bloque, on passe à la suite.
         const resClubs = await axios.get('/api/clubs', { timeout: 3000 });
         if (resClubs.data && resClubs.data.length > 0) {
           setClubsData(resClubs.data);
@@ -115,14 +129,15 @@ export default function AmbassadorsPage() {
         console.error("Le backend met trop de temps ou erreur, chargement des clubs par défaut.");
         setClubsData(DEFAULT_CLUBS);
       } finally {
-        setLoading(false); // Force l'arrêt du chargement
+        setLoading(false);
       }
     };
     fetchData();
   }, []);
 
+  // ANIMATIONS FRAMER MOTION (Uniquement pour l'apparition, pas de whileHover)
   const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-  const item = { hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 60 } } };
+  const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 260, damping: 20 } } };
 
   const PersonCard = ({ title, person, isMain }) => (
     <div style={{ background: isMain ? 'linear-gradient(135deg, #1e293b, #0f172a)' : 'white', borderRadius: '20px', padding: '25px', color: isMain ? 'white' : '#1e293b', boxShadow: '0 10px 25px rgba(0,0,0,0.05)', border: isMain ? 'none' : '1px solid #e2e8f0', display: 'flex', gap: '20px', alignItems: 'center' }}>
@@ -147,7 +162,7 @@ export default function AmbassadorsPage() {
           </motion.h1>
           <div style={styles.toggleContainer}>
             <button onClick={() => setView('ambassadeurs')} style={{ ...styles.toggleBtn, background: view === 'ambassadeurs' ? '#2563eb' : 'transparent', color: view === 'ambassadeurs' ? 'white' : '#64748b' }}><Users size={18} /> Ambassadeurs</button>
-            <button onClick={() => { setView('clubs'); setSelectedClub(null); }} style={{ ...styles.toggleBtn, background: view === 'clubs' ? '#2563eb' : 'transparent', color: view === 'clubs' ? 'white' : '#64748b' }}><Trophy size={18} /> Clubs Étudiants</button>
+            <button onClick={() => { setView('clubs'); setSelectedClub(null); }} style={{ ...styles.toggleBtn, background: view === 'clubs' ? '#2563eb' : 'transparent', color: view === 'clubs' ? 'white' : '#64748b' }}><Trophy size={18} /> Clubs & Clubs</button>
           </div>
         </header>
 
@@ -158,14 +173,14 @@ export default function AmbassadorsPage() {
               <motion.div key="ambs" variants={container} initial="hidden" animate="show" exit={{opacity:0}} style={styles.grid}>
                 {ambassadors.length === 0 && <p style={{gridColumn: '1/-1', textAlign: 'center', color: '#64748b'}}>Aucun ambassadeur avec photo pour le moment.</p>}
                 {ambassadors.map((amb) => (
-                  <motion.div key={amb._id} variants={item} style={styles.card} whileHover={{ y: -8 }}>
+                  <motion.div key={amb._id} variants={item} className="ambassador-card" style={styles.card}>
                     <div style={styles.cardHeader}>
                       <div style={styles.branchBadge}><Briefcase size={12} style={{marginRight:'4px'}}/> {amb.branch || 'Filière'}</div>
                       <div style={styles.imageContainer}><img src={amb.photo} alt={amb.prenom} style={styles.image} /></div>
                     </div>
                     <div style={styles.cardBody}>
                       <h3 style={styles.name}>{amb.prenom} {amb.nom}</h3>
-                      {amb.linkedin && <a href={amb.linkedin} target="_blank" rel="noopener noreferrer" style={styles.linkedinBtn}><Linkedin size={14} /> Profil LinkedIn</a>}
+                      {amb.linkedin && <a href={amb.linkedin} target="_blank" rel="noopener noreferrer" className="linkedin-link" style={styles.linkedinBtn}><Linkedin size={14} /> Profil LinkedIn</a>}
                       <div style={styles.quoteContainer}>
                         <Quote size={16} style={styles.quoteIcon} />
                         <p style={styles.quoteText}>{amb.whyCMC || "Enthousiaste pour cette nouvelle aventure à la CMC !"}</p>
@@ -184,27 +199,39 @@ export default function AmbassadorsPage() {
 
             {view === 'clubs' && (
               <motion.div key="clubs" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{opacity:0}}>
+                
+                {/* --- GRILLE DE TOUS LES CLUBS --- */}
                 {!selectedClub && (
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
+                  <motion.div variants={container} initial="hidden" animate="show" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '30px', maxWidth: '1100px', margin: '0 auto', padding: '0 20px' }}>
                     {clubsData.map(club => (
-                      <motion.div key={club.id || club._id} whileHover={{ y: -5 }} onClick={() => { setSelectedClub(club); setSelectedSub(null); }} style={styles.clubMainCard}>
+                      <motion.div 
+                        key={club.id || club._id} 
+                        variants={item} 
+                        className="club-main-card"
+                        onClick={() => { setSelectedClub(club); setSelectedSub(null); window.scrollTo({top: 0, behavior: 'smooth'}); }} 
+                        style={styles.clubMainCard}
+                      >
                         <div style={{...styles.clubIconBox, background: club.bgIcon}}><span style={{fontSize:'2.5rem'}}>{club.icon}</span></div>
                         <h2 style={{ fontSize: '1.6rem', fontWeight: '800', color: '#1e293b', marginBottom: '10px' }}>{club.name}</h2>
                         <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '20px' }}>{club.description}</p>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
                           <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#94a3b8' }}>{(club.subClubs?.length || 0) + (club.staff?.length || 0)} Membres clés</span>
-                          <ChevronRight size={20} color="#3b82f6" />
+                          <ChevronRight size={20} color="#3b82f6" className="chevron-icon" />
                         </div>
                       </motion.div>
                     ))}
-                  </div>
+                  </motion.div>
                 )}
 
+                {/* --- VUE DÉTAILLÉE DU CLUB SÉLECTIONNÉ --- */}
                 {selectedClub && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{maxWidth:'1200px', margin:'0 auto', padding:'0 20px'}}>
-                    <button onClick={() => setSelectedClub(null)} style={styles.returnBtn}><ArrowLeft size={16}/> Retour aux Pôles</button>
+                    
+                    <button onClick={() => setSelectedClub(null)} className="return-btn" style={styles.returnBtn}><ArrowLeft size={16}/> Retour aux Clubs</button>
 
                     <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
+                      
+                      {/* COLONNE GAUCHE : Président & Staff */}
                       <div style={{ flex: '1 1 450px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                         <div style={{ background: `linear-gradient(135deg, ${selectedClub.bgIcon}, white)`, padding: '30px', borderRadius: '24px', border: '1px solid #e2e8f0' }}>
                           <h2 style={{ fontSize: '2rem', fontWeight: '900', margin: '0 0 10px 0', color: '#1e293b' }}>{selectedClub.icon} {selectedClub.name}</h2>
@@ -213,54 +240,77 @@ export default function AmbassadorsPage() {
                         
                         <AnimatePresence mode="wait">
                           <motion.div key={selectedSub ? selectedSub.id || selectedSub._id : 'president'} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                            
                             {selectedSub ? (
                               <PersonCard title={`Responsable ${selectedSub.name}`} person={selectedSub.responsable} isMain={false} />
                             ) : (
-                              <PersonCard title="Président(e) du Pôle" person={selectedClub.president} isMain={true} />
+                              <PersonCard title="Président(e) du Club" person={selectedClub.president} isMain={true} />
                             )}
 
+                            {/* SCROLL DU STAFF */}
                             {((selectedSub && selectedSub.staff?.length > 0) || (!selectedSub && selectedClub.staff?.length > 0)) && (
                               <div style={{marginTop: '25px', background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9'}}>
                                 <h4 style={{fontSize: '0.9rem', color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px'}}><Star size={16}/> Membres du Staff</h4>
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '15px'}}>
-                                  {(selectedSub ? selectedSub.staff : selectedClub.staff).map((member, i) => (
-                                    <div key={i} style={{display: 'flex', alignItems: 'center', gap: '15px', paddingBottom: '10px', borderBottom: '1px dashed #e2e8f0'}}>
-                                      <img src={member.photo || `https://ui-avatars.com/api/?name=${member.prenom}+${member.nom}`} alt="" style={{width:'40px', height:'40px', borderRadius:'50%', objectFit:'cover'}} />
+                                
+                                <motion.div 
+                                  className="staff-scroll-container"
+                                  variants={container} 
+                                  initial="hidden" 
+                                  animate="show" 
+                                  style={{display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '300px', overflowY: 'auto', overflowX: 'hidden', paddingRight: '10px'}}
+                                >
+                                  {(selectedSub ? selectedSub.staff : selectedClub.staff).map((member, i, arr) => (
+                                    <motion.div 
+                                      key={i} 
+                                      variants={item}
+                                      className="staff-member-card"
+                                      style={{display: 'flex', alignItems: 'center', gap: '15px', padding: '10px 15px', borderRadius: '12px', borderBottom: i !== arr.length -1 ? '1px dashed #e2e8f0' : 'none', cursor: 'default'}}
+                                    >
+                                      <img src={member.photo || `https://ui-avatars.com/api/?name=${member.prenom}+${member.nom}`} alt="" style={{width:'45px', height:'45px', borderRadius:'50%', objectFit:'cover'}} />
                                       <div>
                                         <p style={{margin:0, fontWeight:'bold', color:'#1e293b'}}>{member.prenom} {member.nom}</p>
                                         <p style={{margin:0, fontSize:'0.8rem', color:'#64748b'}}>{member.role}</p>
                                       </div>
-                                    </div>
+                                    </motion.div>
                                   ))}
-                                </div>
+                                </motion.div>
                               </div>
                             )}
                           </motion.div>
                         </AnimatePresence>
                       </div>
 
+                      {/* COLONNE DROITE : Grille des Sous-Clubs */}
                       <div style={{ flex: '1 1 500px' }}>
                         {selectedClub.subClubs?.length > 0 && (
                           <>
                             <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#1e293b', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                               Sous-Clubs et Activités
-                              {selectedSub && <button onClick={() => setSelectedSub(null)} style={{ fontSize: '0.8rem', background: '#f1f5f9', border: 'none', padding: '6px 12px', borderRadius: '20px', cursor: 'pointer', color:'#475569', fontWeight:'bold' }}>Voir le Président</button>}
+                              {selectedSub && <button onClick={() => setSelectedSub(null)} className="return-btn-small">Voir le Président</button>}
                             </h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                            
+                            <motion.div variants={container} initial="hidden" animate="show" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
                               {selectedClub.subClubs?.map(sub => {
                                 const isSelected = selectedSub?.id === sub.id || selectedSub?._id === sub._id;
                                 return (
-                                  <div key={sub.id || sub._id} onClick={() => setSelectedSub(sub)} style={{ background: isSelected ? '#eff6ff' : 'white', border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0', padding: '20px', borderRadius: '16px', cursor: 'pointer', transition: '0.2s', boxShadow: isSelected ? '0 10px 25px rgba(59,130,246,0.15)' : 'none' }}>
+                                  <motion.div 
+                                    variants={item}
+                                    key={sub.id || sub._id} 
+                                    onClick={() => setSelectedSub(sub)} 
+                                    className={`sub-club-card ${isSelected ? 'selected' : ''}`}
+                                    style={{ background: isSelected ? '#eff6ff' : 'white', border: isSelected ? '2px solid #3b82f6' : '1px solid #e2e8f0', padding: '20px', borderRadius: '16px', cursor: 'pointer', boxShadow: isSelected ? '0 10px 25px rgba(59,130,246,0.15)' : 'none' }}
+                                  >
                                     <div style={{ fontSize: '2rem', marginBottom:'10px' }}>{sub.icon}</div>
-                                    <h4 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: isSelected ? '#1d4ed8' : '#1e293b' }}>{sub.name}</h4>
+                                    <h4 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', color: isSelected ? '#1d4ed8' : '#1e293b', transition: '0.2s' }}>{sub.name}</h4>
                                     <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0, lineHeight: '1.4' }}>{sub.desc}</p>
-                                  </div>
+                                  </motion.div>
                                 );
                               })}
-                            </div>
+                            </motion.div>
                           </>
                         )}
                       </div>
+
                     </div>
                   </motion.div>
                 )}
@@ -269,20 +319,67 @@ export default function AmbassadorsPage() {
           </AnimatePresence>
         )}
       </div>
+
+      <button 
+        style={{
+          ...styles.scrollTopBtn, 
+          opacity: showScrollTop ? 1 : 0, 
+          pointerEvents: showScrollTop ? 'auto' : 'none', 
+          transform: showScrollTop ? 'translateY(0)' : 'translateY(20px)'
+        }} 
+        onClick={scrollToTop}
+        title="Retour en haut"
+      >
+        <ArrowUp size={24} />
+      </button>
+
+      {/* TOUTES LES ANIMATIONS DE HOVER SONT GÉRÉES EN CSS PUR ICI POUR ZÉRO LAG */}
+      <style>{`
+        /* Hover Staff Scroll (Fluide) */
+        .staff-member-card { transition: all 0.3s ease; }
+        .staff-member-card:hover { transform: translateX(8px); background-color: #f8fafc; }
+
+        /* Hover Sous-Clubs (Fluide) */
+        .sub-club-card { transition: all 0.3s ease; }
+        .sub-club-card:not(.selected):hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important; border-color: #cbd5e1 !important; }
+
+        /* Hover Clubs Principaux (Fluide) */
+        .club-main-card { transition: all 0.3s ease; }
+        .club-main-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.08) !important; }
+        .club-main-card:hover .chevron-icon { transform: translateX(5px); }
+        .chevron-icon { transition: transform 0.3s ease; }
+
+        /* Hover Ambassadeurs (Fluide) */
+        .ambassador-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .ambassador-card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(0,0,0,0.08) !important; }
+        .linkedin-link:hover { background-color: #dbeafe !important; }
+
+        /* Boutons */
+        .return-btn:hover { background-color: #f1f5f9 !important; }
+        .return-btn-small { font-size: 0.8rem; background: #f1f5f9; border: none; padding: 6px 12px; border-radius: 20px; cursor: pointer; color: #475569; font-weight: bold; transition: all 0.2s; }
+        .return-btn-small:hover { background: #e2e8f0; color: #1e293b; }
+
+        /* Scrollbar Personnalisée pour le Staff */
+        .staff-scroll-container::-webkit-scrollbar { width: 6px; }
+        .staff-scroll-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
+        .staff-scroll-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .staff-scroll-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+      `}</style>
     </div>
   );
 }
 
+// --- STYLES SANS TRANSITIONS CONFLICTUELLES ---
 const styles = {
   page: { minHeight: '100vh', background: '#f8fafc', fontFamily: "'Inter', sans-serif" },
   nav: { padding: '20px 40px' },
-  backBtn: { display: 'flex', alignItems: 'center', gap: '8px', background: 'white', border: '1px solid #e2e8f0', padding: '10px 24px', borderRadius: '30px', cursor: 'pointer', fontWeight: '600', color: '#475569', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' },
+  backBtn: { display: 'flex', alignItems: 'center', gap: '8px', background: 'white', border: '1px solid #e2e8f0', padding: '10px 24px', borderRadius: '30px', cursor: 'pointer', fontWeight: '600', color: '#475569', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', transition: 'all 0.2s' },
   content: { paddingBottom: '80px' },
   header: { textAlign: 'center', padding: '10px 20px 40px' },
   title: { fontSize: '3rem', fontWeight: '900', color: '#0f172a', marginBottom: '15px' },
   highlight: { color: '#2563eb' },
   toggleContainer: { display: 'inline-flex', background: 'white', padding: '6px', borderRadius: '30px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', border:'1px solid #e2e8f0' },
-  toggleBtn: { padding: '10px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', transition: '0.3s' },
+  toggleBtn: { padding: '10px 25px', borderRadius: '25px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', transition: 'background-color 0.3s, color 0.3s' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '30px', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' },
   loader: { textAlign: 'center', fontSize: '1.2rem', color: '#94a3b8', marginTop: '50px' },
   card: { background: 'white', borderRadius: '24px', border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column' },
@@ -299,7 +396,8 @@ const styles = {
   hobbiesContainer: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', width: '100%', marginTop: '15px' },
   hobbyLabel: { fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#94a3b8', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' },
   hobbiesText: { color: '#334155', fontWeight: '600', fontSize: '0.9rem', margin: 0 },
-  clubMainCard: { background: 'white', borderRadius: '24px', padding: '30px', cursor: 'pointer', boxShadow: '0 10px 30px rgba(0,0,0,0.04)', border: '1px solid #f1f5f9' },
+  clubMainCard: { background: 'white', borderRadius: '24px', padding: '30px', cursor: 'pointer', border: '1px solid #f1f5f9' }, 
   clubIconBox: { width: '80px', height: '80px', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px' },
-  returnBtn: { background: 'white', border: '1px solid #e2e8f0', padding: '10px 20px', borderRadius: '30px', cursor: 'pointer', marginBottom: '30px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px', boxShadow:'0 4px 6px rgba(0,0,0,0.02)' }
+  returnBtn: { background: 'white', border: '1px solid #e2e8f0', padding: '10px 20px', borderRadius: '30px', cursor: 'pointer', marginBottom: '30px', fontWeight: 'bold', color: '#475569', display: 'flex', alignItems: 'center', gap: '8px', boxShadow:'0 4px 6px rgba(0,0,0,0.02)' },
+  scrollTopBtn: { position: 'fixed', bottom: '30px', right: '30px', background: '#2563eb', color: 'white', width: '50px', height: '50px', borderRadius: '50%', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 25px rgba(37,99,235,0.4)', cursor: 'pointer', zIndex: 1000, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }
 };
