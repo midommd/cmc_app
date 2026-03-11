@@ -162,7 +162,7 @@ export default function AmbassadorsPage() {
           </motion.h1>
           <div style={styles.toggleContainer}>
             <button onClick={() => setView('ambassadeurs')} style={{ ...styles.toggleBtn, background: view === 'ambassadeurs' ? '#2563eb' : 'transparent', color: view === 'ambassadeurs' ? 'white' : '#64748b' }}><Users size={18} /> Ambassadeurs</button>
-            <button onClick={() => { setView('clubs'); setSelectedClub(null); }} style={{ ...styles.toggleBtn, background: view === 'clubs' ? '#2563eb' : 'transparent', color: view === 'clubs' ? 'white' : '#64748b' }}><Trophy size={18} /> Clubs & Clubs</button>
+            <button onClick={() => { setView('clubs'); setSelectedClub(null); }} style={{ ...styles.toggleBtn, background: view === 'clubs' ? '#2563eb' : 'transparent', color: view === 'clubs' ? 'white' : '#64748b' }}><Trophy size={18} /> Clubs </button>
           </div>
         </header>
 
