@@ -6,6 +6,7 @@ import { LogIn, Users, ArrowRight, ShieldCheck, Heart, MapPin, CalendarDays, Awa
 
 const SLIDER_IMAGES = [
   "https://res.cloudinary.com/dddxjro92/image/upload/v1772903649/cmc-img_zm0mfj.webp",
+  "https://res.cloudinary.com/dddxjro92/image/upload/v1773215648/q9ymst5igpwrrdmcpcpg.jpg",
   "https://res.cloudinary.com/dddxjro92/image/upload/v1773061990/ancvpejsa5quu3zfx0pv.png"
 ];
 
