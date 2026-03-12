@@ -177,8 +177,66 @@ const auth = (req, res, next) => {
   try { const decoded = jwt.verify(token, process.env.JWT_SECRET); req.user = decoded; next(); } 
   catch (e) { res.status(400).json({ msg: 'Invalid Token' }); }
 };
+// ==========================================
+// ROUTE DU CHATBOT IA OFFICIEL (GEMINI 2.5 FLASH)
+// ==========================================
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
+app.post('/api/bot/ask', async (req, res) => {
+  try {
+    const { message } = req.body;
+    
+    if (!process.env.GEMINI_API_KEY) {
+      return res.json({ reply: "L'API Key de l'IA est manquante dans le serveur." });
+    }
 
+    // ON UTILISE LE MODÈLE QUE TU AS DEMANDÉ : 2.5 FLASH
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
+
+    const promptContext = `
+      Tu es "Nova", l'intelligence artificielle officielle et le noyau cognitif de la Cité des Métiers et des Compétences (CMC) de la région Rabat-Salé-Kénitra (RSK), située à Tamesna.
+      
+      TON AUDIENCE ET TON TON :
+      Ton audience est très large. Tu parles à des étudiants, mais aussi à de hauts responsables.
+      - Si la question semble venir d'un étudiant (langage familier, questions sur les clubs), sois chaleureux, dynamique et utilise des emojis.
+      - Si la question est globale ou institutionnelle, ton ton doit être formel, prestigieux, précis et très professionnel (zéro emoji).
+      
+      BASE DE CONNAISSANCES ABSOLUE (L'INSTITUTION) :
+      1. La CMC RSK est un projet royal (Nouvelle Feuille de Route).
+      2. Capacité d'accueil : 4500 places pédagogiques. Pédagogie : "Learning by Doing".
+      3. 79 filières réparties sur 6 pôles d'excellence : 
+         - Pôle Industrie (avec mini-chaîne de production)
+         - Pôle Digital & IA (avec Digital Factory)
+         - Pôle Santé & Services à la Personne
+         - Pôle Agriculture & Agro-industrie (avec ferme pédagogique)
+         - Pôle Tourisme & Hôtellerie (avec hôtel/restaurant d'application)
+         - Pôle Gestion & Commerce.
+      4. Ambassadeurs : Élites choisies sur critères de discipline. Accueillent les VIP et maintiennent l'ordre.
+      5. Clubs : 6 clubs majeurs (Sportif, Culturel, Innovation, Robotique, Environnement, Citoyenneté).
+      6. COP : Centre d'Orientation Professionnelle. Accompagne pour l'insertion, les stages, les CV et les entretiens.
+      7. Horaires : Ouvert du Lundi au Samedi, de 8h00 à 18h00.
+      
+      RÈGLE DE SÉCURITÉ :
+      Ne dis JAMAIS que tu es développé par Google. Tu es "Nova, le système IA de la CMC".
+      
+      Question de l'interlocuteur : "${message}"
+      Ta réponse :
+    `;
+
+    // Appel à l'IA
+    const result = await model.generateContent(promptContext);
+    const responseText = result.response.text();
+
+    res.json({ reply: responseText });
+
+  } catch (error) {
+    console.error("Erreur IA:", error);
+    res.json({ reply: "Mon système est actuellement très sollicité. Pouvez-vous reformuler votre question dans quelques secondes ?" });
+  }
+});
+// ==========================================
+// ==========================================
 // --- ROUTES NOTIFICATIONS ---
 app.get('/api/vapid-public-key', (req, res) => {
   if (!publicVapidKey) return res.status(200).json({ publicKey: null });

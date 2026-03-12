@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogIn, Users, ArrowRight, ShieldCheck, Heart, MapPin, CalendarDays, Award, Briefcase, GraduationCap, ChevronRight, ChevronLeft, ArrowUp } from 'lucide-react';
-
+import CmcAssistant from './CmcAssistant';
 const SLIDER_IMAGES = [
   "https://res.cloudinary.com/dddxjro92/image/upload/v1772903649/cmc-img_zm0mfj.webp",
   "https://res.cloudinary.com/dddxjro92/image/upload/v1773215648/q9ymst5igpwrrdmcpcpg.jpg",
@@ -349,6 +349,7 @@ export default function LandingPage() {
       >
         <ArrowUp size={24} />
       </button>
+      <CmcAssistant />
 
       {/* ================= CSS RESPONSIVE & LAYOUT ================= */}
       <style>{`
