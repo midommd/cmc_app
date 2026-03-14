@@ -265,7 +265,7 @@ export default function LandingPage() {
           <div className="benefits-grid">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="benefit-card">
               <div className="benefit-icon icon-blue"><Briefcase size={28}/></div>
-              <h3 className="benefit-title">Soft Skills</h3>
+              <h3 className="benefit-title">Acquisition Des Compétences</h3>
               <p className="benefit-text">Améliorez votre prise de parole, votre gestion des imprévus et votre relationnel sur le terrain.</p>
             </motion.div>
             
@@ -277,7 +277,7 @@ export default function LandingPage() {
 
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="benefit-card">
               <div className="benefit-icon icon-green"><GraduationCap size={28}/></div>
-              <h3 className="benefit-title">Certificat de Mérite</h3>
+              <h3 className="benefit-title">Attestation Stagiaire Ambassadeur</h3>
               <p className="benefit-text">Obtenez une reconnaissance officielle qui fera la différence sur votre CV.</p>
             </motion.div>
           </div>
@@ -286,7 +286,7 @@ export default function LandingPage() {
         {/* === SECTION 3 : BENTO GRID === */}
         <section className="section-padding" style={{paddingBottom: '100px'}}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUp} className="section-header">
-            <h2 className="section-title">Votre rôle sur l'établissement</h2>
+            <h2 className="section-title">Votre rôle !</h2>
             <p className="section-subtitle">Des responsabilités à forte valeur ajoutée.</p>
           </motion.div>
 
@@ -294,19 +294,19 @@ export default function LandingPage() {
             
             <motion.div variants={fadeInUp} className="bento-card bento-span-2 bento-white">
               <div className="bento-icon"><MapPin size={24} /></div>
-              <h3 className="bento-title">Accueil des délégations</h3>
+              <h3 className="bento-title">Accueil des visiteurs</h3>
               <p className="bento-text">Devenez l'hôte de marque de la CMC-RSK. Guidez les visiteurs, orientez les nouveaux inscrits et représentez l'hospitalité de notre institution lors des événements.</p>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="bento-card bento-dark">
               <div className="bento-icon dark-icon"><CalendarDays size={24} /></div>
-              <h3 className="bento-title" style={{color: 'white'}}>Organisation VIP</h3>
+              <h3 className="bento-title" style={{color: 'white'}}>Organisation</h3>
               <p className="bento-text" style={{color: '#94a3b8'}}>Assurez le bon déroulement logistique des forums, séminaires et remises de diplômes.</p>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="bento-card bento-blue">
               <div className="bento-icon"><ShieldCheck size={24} /></div>
-              <h3 className="bento-title">Maintien de l'ordre</h3>
+              <h3 className="bento-title">Exemple de conduite</h3>
               <p className="bento-text">Veillez au respect du règlement intérieur et véhiculez une image disciplinée.</p>
             </motion.div>
 
