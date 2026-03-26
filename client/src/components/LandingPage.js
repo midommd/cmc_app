@@ -161,9 +161,9 @@ export default function LandingPage() {
         <section className="hero-layout">
           <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="hero-text-col">
             
-            <motion.div variants={fadeInUp}>
+            {/*<motion.div variants={fadeInUp}>
               <span className="badge-text">✨ {t('excellence_program')} {academicYear}</span>
-            </motion.div>
+            </motion.div>*/}
 
             <motion.h1 variants={fadeInUp} className="hero-title">
               {t('hero_title_1')} <br/>{t('hero_title_2')}
