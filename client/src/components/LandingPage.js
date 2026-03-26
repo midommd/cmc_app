@@ -541,8 +541,20 @@ export default function LandingPage() {
         }
 
         @media (max-width: 768px) {
-          .hide-mobile { display: none; }
-          .nav-actions { gap: 10px; }
+          .hide-mobile { display: none !important; }
+          
+          /* NOUVEAU : Réduction des marges de la Navbar pour mobile */
+          .navbar { padding: 10px; }
+          .nav-container { padding: 8px 12px; border-radius: 16px; }
+          .nav-actions { gap: 8px; }
+          .nav-login-btn { padding: 8px 12px; border-radius: 12px; font-size: 0.85rem; }
+          
+          /* NOUVEAU : On gagne de la place sur le logo */
+          .brand-sub { display: none; } 
+          .brand-name { font-size: 1rem; }
+          .logo-icon { padding: 6px; }
+          .logo-group { gap: 8px; }
+
           .hero-title { font-size: 2.2rem; }
           .hero-subtitle { font-size: 1rem; }
           .section-title { font-size: 1.8rem; }
@@ -550,10 +562,10 @@ export default function LandingPage() {
           .bento-flex { flex-direction: column; text-align: left; align-items: flex-start; }
           .benefits-grid { grid-template-columns: 1fr; }
           .bento-grid { grid-template-columns: 1fr; }
-          .nav-login-btn { padding: 8px 15px; border-radius: 12px; }
           .bento-card { padding: 25px; }
           .footer-content { flex-direction: column; text-align: center; justify-content: center; }
           .footer-text { text-align: center; }
+          
           .scroll-to-top { bottom: 20px; right: 20px; width: 45px; height: 45px; }
         }
       `}</style>
