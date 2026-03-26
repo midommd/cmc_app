@@ -1,6 +1,7 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './components/LandingPage'; 
+import GlobalLanguageSwitcher from './components/GlobalLanguageSwitcher';
 import './App.css';
 const Login = lazy(() => import('./components/Login'));
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -41,6 +42,7 @@ function App() {
   return (
     <Router>
       <div className="App">
+        
         {/* Suspense est obligatoire pour dire à React quoi afficher pendant qu'il "Lazy load" une page */}
         <Suspense fallback={<FallbackLoader />}>
           <Routes>

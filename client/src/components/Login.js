@@ -3,8 +3,10 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, Lock, Mail, ArrowLeft, Eye, EyeOff } from 'lucide-react'; 
 import toast, { Toaster } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next'; // <-- NOUVEAU
 
 export default function Login({ onLogin }) {
+  const { t } = useTranslation(); // <-- NOUVEAU
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,7 @@ export default function Login({ onLogin }) {
     setLoading(true);
     try {
       const res = await axios.post('/api/auth/login', formData);
-      toast.success('Connexion réussie !');
+      toast.success(t('login_success'));
       onLogin(res.data.token, res.data.user);
     } catch (err) {
       console.error(err);
@@ -27,7 +29,7 @@ export default function Login({ onLogin }) {
       if (errors) {
         errors.forEach(error => toast.error(error.msg));
       } else {
-        toast.error(err.response?.data?.msg || 'Erreur de connexion');
+        toast.error(err.response?.data?.msg || t('login_error'));
       }
     }
     setLoading(false);
@@ -43,18 +45,18 @@ export default function Login({ onLogin }) {
         <button 
           onClick={() => navigate('/')} 
           style={styles.backBtn}
-          title="Retour à l'accueil"
+          title={t('back_to_home')}
           className="hover-scale" 
         >
-          <ArrowLeft size={20} /> Retour
+          <ArrowLeft size={20} /> {t('back')}
         </button>
 
         <div style={styles.header}>
           <div style={styles.iconCircle}>
             <LogIn size={28} color="#2563eb" />
           </div>
-          <h2 style={styles.title}>Espace Ambassadeur & Clubs</h2>
-          <p style={styles.subtitle}>Connectez-vous pour gérer vos missions et clubs</p>
+          <h2 style={styles.title}>{t('login_title')}</h2>
+          <p style={styles.subtitle}>{t('login_subtitle')}</p>
         </div>
 
         <form onSubmit={onSubmit} style={styles.form}>
@@ -66,7 +68,7 @@ export default function Login({ onLogin }) {
               name="email"
               value={email}
               onChange={onChange}
-              placeholder="Email académique"
+              placeholder={t('academic_email')}
               required
               style={styles.input}
             />
@@ -80,7 +82,7 @@ export default function Login({ onLogin }) {
               name="password"
               value={password}
               onChange={onChange}
-              placeholder="Mot de passe"
+              placeholder={t('password')}
               required
               style={{ ...styles.input, paddingRight: '45px' }}
             />
@@ -89,33 +91,33 @@ export default function Login({ onLogin }) {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               style={styles.eyeBtn}
-              title={showPassword ? "Cacher le mot de passe" : "Afficher le mot de passe"}
+              title={showPassword ? t('hide_password') : t('show_password')}
             >
               {showPassword ? <EyeOff size={18} color="#94a3b8" /> : <Eye size={18} color="#94a3b8" />}
             </button>
           </div>
 
           <button type="submit" disabled={loading} style={styles.button}>
-            {loading ? 'Connexion en cours...' : 'Se connecter'}
+            {loading ? t('connecting') : t('login_btn')}
           </button>
           
           <div style={{marginTop: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '20px'}}>
             <p style={{marginBottom: '10px', color: '#64748b', fontSize: '0.9rem', textAlign: 'center'}}>
-              Curieux de nous connaître ?
+              {t('curious_about_us')}
             </p>
             <button 
               type="button" 
-              onClick={() => navigate('/ambassadors')} // Remplacé href par navigate pour éviter de recharger toute l'app React
+              onClick={() => navigate('/ambassadors')} 
               style={styles.secondaryBtn}
             >
-              ✨ Voir la Communauté (Ambassadeurs & Clubs)
+              ✨ {t('see_community')}
             </button>
           </div>
         </form>
         
         <div style={styles.footer}>
           <p style={{fontSize: '0.8rem', color: '#94a3b8'}}>
-            Problème de connexion ? Contactez le Responsable d'application ou envoyez un email en <a href="mailto:mohammedelmahdidaifi@gmail.com" style={{color: '#2563eb', textDecoration: 'none', fontWeight: 'bold'}}>cliquant ici</a>
+            {t('login_problem')} <a href="mailto:mohammedelmahdidaifi@gmail.com" style={{color: '#2563eb', textDecoration: 'none', fontWeight: 'bold'}}>{t('click_here')}</a>
           </p>
         </div>
       </div>

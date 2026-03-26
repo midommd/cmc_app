@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Quote, Briefcase, Users, Trophy, ChevronRight, User as UserIcon, Heart, Linkedin, Star, ArrowUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next'; // <-- IMPORT DE LA TRADUCTION
 
 const DEFAULT_CLUBS = [
   {
@@ -88,6 +89,7 @@ const DEFAULT_CLUBS = [
 ];
 
 export default function AmbassadorsPage() {
+  const { t } = useTranslation(); // <-- INITIALISATION
   const navigate = useNavigate();
   const [view, setView] = useState('ambassadeurs'); 
   const [ambassadors, setAmbassadors] = useState([]);
@@ -153,41 +155,41 @@ export default function AmbassadorsPage() {
 
   return (
     <div style={styles.page}>
-      <nav style={styles.nav}><button onClick={() => navigate('/')} style={styles.backBtn}><ArrowLeft size={20} /> Retour</button></nav>
+      <nav style={styles.nav}><button onClick={() => navigate('/')} style={styles.backBtn}><ArrowLeft size={20} /> {t('back')}</button></nav>
 
       <div style={styles.content}>
         <header style={styles.header}>
           <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} style={styles.title}>
-            Notre <span style={styles.highlight}>Communauté</span>
+            {t('our_community_1')} <span style={styles.highlight}>{t('our_community_2')}</span>
           </motion.h1>
           <div style={styles.toggleContainer}>
-            <button onClick={() => setView('ambassadeurs')} style={{ ...styles.toggleBtn, background: view === 'ambassadeurs' ? '#2563eb' : 'transparent', color: view === 'ambassadeurs' ? 'white' : '#64748b' }}><Users size={18} /> Ambassadeurs</button>
-            <button onClick={() => { setView('clubs'); setSelectedClub(null); }} style={{ ...styles.toggleBtn, background: view === 'clubs' ? '#2563eb' : 'transparent', color: view === 'clubs' ? 'white' : '#64748b' }}><Trophy size={18} /> Clubs </button>
+            <button onClick={() => setView('ambassadeurs')} style={{ ...styles.toggleBtn, background: view === 'ambassadeurs' ? '#2563eb' : 'transparent', color: view === 'ambassadeurs' ? 'white' : '#64748b' }}><Users size={18} /> {t('ambassadors_tab')}</button>
+            <button onClick={() => { setView('clubs'); setSelectedClub(null); }} style={{ ...styles.toggleBtn, background: view === 'clubs' ? '#2563eb' : 'transparent', color: view === 'clubs' ? 'white' : '#64748b' }}><Trophy size={18} /> {t('clubs_tab')} </button>
           </div>
         </header>
 
-        {loading ? <div style={styles.loader}>Chargement de la communauté...</div> : (
+        {loading ? <div style={styles.loader}>{t('loading_community')}</div> : (
           <AnimatePresence mode="wait">
             
             {view === 'ambassadeurs' && (
               <motion.div key="ambs" variants={container} initial="hidden" animate="show" exit={{opacity:0}} style={styles.grid}>
-                {ambassadors.length === 0 && <p style={{gridColumn: '1/-1', textAlign: 'center', color: '#64748b'}}>Aucun ambassadeur avec photo pour le moment.</p>}
+                {ambassadors.length === 0 && <p style={{gridColumn: '1/-1', textAlign: 'center', color: '#64748b'}}>{t('no_ambassadors')}</p>}
                 {ambassadors.map((amb) => (
                   <motion.div key={amb._id} variants={item} className="ambassador-card" style={styles.card}>
                     <div style={styles.cardHeader}>
-                      <div style={styles.branchBadge}><Briefcase size={12} style={{marginRight:'4px'}}/> {amb.branch || 'Filière'}</div>
+                      <div style={styles.branchBadge}><Briefcase size={12} style={{marginRight:'4px'}}/> {amb.branch || t('branch_default')}</div>
                       <div style={styles.imageContainer}><img src={amb.photo} alt={amb.prenom} style={styles.image} /></div>
                     </div>
                     <div style={styles.cardBody}>
                       <h3 style={styles.name}>{amb.prenom} {amb.nom}</h3>
-                      {amb.linkedin && <a href={amb.linkedin} target="_blank" rel="noopener noreferrer" className="linkedin-link" style={styles.linkedinBtn}><Linkedin size={14} /> Profil LinkedIn</a>}
+                      {amb.linkedin && <a href={amb.linkedin} target="_blank" rel="noopener noreferrer" className="linkedin-link" style={styles.linkedinBtn}><Linkedin size={14} /> {t('linkedin_profile')}</a>}
                       <div style={styles.quoteContainer}>
                         <Quote size={16} style={styles.quoteIcon} />
-                        <p style={styles.quoteText}>{amb.whyCMC || "Enthousiaste pour cette nouvelle aventure à la CMC !"}</p>
+                        <p style={styles.quoteText}>{amb.whyCMC || t('default_quote')}</p>
                       </div>
                       {amb.hobbies && (
                         <div style={styles.hobbiesContainer}>
-                           <div style={styles.hobbyLabel}><Heart size={14} color="#e11d48"/> Passions :</div>
+                           <div style={styles.hobbyLabel}><Heart size={14} color="#e11d48"/> {t('passions')}</div>
                            <p style={styles.hobbiesText}>{amb.hobbies}</p>
                         </div>
                       )}
@@ -215,7 +217,7 @@ export default function AmbassadorsPage() {
                         <h2 style={{ fontSize: '1.6rem', fontWeight: '800', color: '#1e293b', marginBottom: '10px' }}>{club.name}</h2>
                         <p style={{ color: '#64748b', fontSize: '0.95rem', lineHeight: '1.5', marginBottom: '20px' }}>{club.description}</p>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '15px' }}>
-                          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#94a3b8' }}>{(club.subClubs?.length || 0) + (club.staff?.length || 0)} Membres clés</span>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: '#94a3b8' }}>{(club.subClubs?.length || 0) + (club.staff?.length || 0)} {t('key_members')}</span>
                           <ChevronRight size={20} color="#3b82f6" className="chevron-icon" />
                         </div>
                       </motion.div>
@@ -227,7 +229,7 @@ export default function AmbassadorsPage() {
                 {selectedClub && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{maxWidth:'1200px', margin:'0 auto', padding:'0 20px'}}>
                     
-                    <button onClick={() => setSelectedClub(null)} className="return-btn" style={styles.returnBtn}><ArrowLeft size={16}/> Retour aux Clubs</button>
+                    <button onClick={() => setSelectedClub(null)} className="return-btn" style={styles.returnBtn}><ArrowLeft size={16}/> {t('back_to_clubs')}</button>
 
                     <div style={{ display: 'flex', gap: '40px', flexWrap: 'wrap' }}>
                       
@@ -242,15 +244,15 @@ export default function AmbassadorsPage() {
                           <motion.div key={selectedSub ? selectedSub.id || selectedSub._id : 'president'} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
                             
                             {selectedSub ? (
-                              <PersonCard title={`Responsable ${selectedSub.name}`} person={selectedSub.responsable} isMain={false} />
+                              <PersonCard title={t('leader_of', {name: selectedSub.name})} person={selectedSub.responsable} isMain={false} />
                             ) : (
-                              <PersonCard title="Président(e) du Club" person={selectedClub.president} isMain={true} />
+                              <PersonCard title={t('club_president')} person={selectedClub.president} isMain={true} />
                             )}
 
                             {/* SCROLL DU STAFF */}
                             {((selectedSub && selectedSub.staff?.length > 0) || (!selectedSub && selectedClub.staff?.length > 0)) && (
                               <div style={{marginTop: '25px', background: 'white', padding: '20px', borderRadius: '20px', border: '1px solid #f1f5f9'}}>
-                                <h4 style={{fontSize: '0.9rem', color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px'}}><Star size={16}/> Membres du Staff</h4>
+                                <h4 style={{fontSize: '0.9rem', color: '#94a3b8', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '15px'}}><Star size={16}/> {t('staff_members')}</h4>
                                 
                                 <motion.div 
                                   className="staff-scroll-container"
@@ -285,8 +287,8 @@ export default function AmbassadorsPage() {
                         {selectedClub.subClubs?.length > 0 && (
                           <>
                             <h3 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#1e293b', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              Sous-Clubs et Activités
-                              {selectedSub && <button onClick={() => setSelectedSub(null)} className="return-btn-small">Voir le Président</button>}
+                              {t('subclubs_activities')}
+                              {selectedSub && <button onClick={() => setSelectedSub(null)} className="return-btn-small">{t('see_president')}</button>}
                             </h3>
                             
                             <motion.div variants={container} initial="hidden" animate="show" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
@@ -328,7 +330,7 @@ export default function AmbassadorsPage() {
           transform: showScrollTop ? 'translateY(0)' : 'translateY(20px)'
         }} 
         onClick={scrollToTop}
-        title="Retour en haut"
+        title={t('back_to_top')}
       >
         <ArrowUp size={24} />
       </button>

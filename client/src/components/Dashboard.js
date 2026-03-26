@@ -7,8 +7,10 @@ import toast, { Toaster } from 'react-hot-toast';
 import ProfileModal from './ProfileModal';
 import AdminUserManagement from './AdminUserManagement';
 import ChatSystem from './ChatSystem';
+import { useTranslation } from 'react-i18next'; // <-- NOUVEAU
 
 export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
+  const { t } = useTranslation(); // <-- NOUVEAU
   const [slots, setSlots] = useState([]);
   const [stats, setStats] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
@@ -17,7 +19,8 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
   // --- ÉTAT DU MODE RAMADAN ---
   const [ramadanMode, setRamadanMode] = useState(false);
   
-  const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+  // Traduction des jours à l'intérieur du composant
+  const days = [t('monday'), t('tuesday'), t('wednesday'), t('thursday'), t('friday')];
 
   // --- CHARGEMENT DES DONNÉES ---
   const refreshData = useCallback(async () => {
@@ -31,9 +34,9 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
       }
     } catch (err) {
       console.error(err);
-      toast.error("Erreur connexion serveur");
+      toast.error(t('server_error'));
     }
-  }, [token, user.role]);
+  }, [token, user.role, t]);
 
   // --- CHARGEMENT DES SETTINGS (RAMADAN) ---
   const fetchSettings = useCallback(async () => {
@@ -55,15 +58,15 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
     try {
       await axios.post('/api/slots/toggle', { slotId }, { headers: { 'x-auth-token': token } });
       await refreshData();
-      toast.success("Mise à jour réussie");
+      toast.success(t('update_success'));
     } catch (err) {
       toast.error(err.response?.data?.msg || "Erreur");
     }
   };
 
   const handleExportReset = async () => {
-    if(!window.confirm("⚠️ Attention : Cela va archiver la semaine et vider le planning. Continuer ?")) return;
-    const loadToast = toast.loading("Traitement en cours...");
+    if(!window.confirm(t('confirm_archive_week'))) return;
+    const loadToast = toast.loading(t('processing'));
     try {
       const response = await axios.post('/api/admin/export-reset', {}, {
         headers: { 'x-auth-token': token },
@@ -76,11 +79,11 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
       document.body.appendChild(link);
       link.click();
       toast.dismiss(loadToast);
-      toast.success("Semaine clôturée !");
+      toast.success(t('week_closed'));
       refreshData();
     } catch (err) {
       toast.dismiss(loadToast);
-      toast.error("Erreur export");
+      toast.error(t('export_error'));
     }
   };
 
@@ -92,14 +95,16 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
       await axios.put('/api/settings/ramadan', { ramadanMode: newMode }, {
         headers: { 'x-auth-token': token }
       });
-      toast.success(newMode ? "🌙 Mode Ramadan Activé" : "☀️ Mode normal rétabli");
+      toast.success(newMode ? t('ramadan_activated') : t('normal_mode_restored'));
     } catch (err) {
       setRamadanMode(!newMode); // Revert en cas d'erreur
-      toast.error("Erreur de sauvegarde du mode");
+      toast.error(t('mode_save_error'));
     }
   };
 
-  const getSlot = (day, periodSearch) => slots.find(s => s.day === day && s.period.toLowerCase().includes(periodSearch.toLowerCase()));
+  // Pour la recherche des slots, on garde les strings originaux de la BDD si besoin.
+  // Assure-toi que les slots dans ta base MongoDB ont "Matin" et "Apr" en dur pour que getSlot fonctionne.
+  const getSlot = (dayKey, periodSearch) => slots.find(s => s.day === dayKey && s.period.toLowerCase().includes(periodSearch.toLowerCase()));
 
   // --- NAVIGATION ITEM ---
   const NavItem = ({ id, icon: Icon, label }) => (
@@ -127,14 +132,14 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
           <div style={styles.logoBadge}>{user.role === 'admin' ? <Shield color="white" size={20}/> : <Users color="white" size={20}/>}</div>
           <div>
             <h1 style={{fontSize:'1.1rem', fontWeight:'800', margin:0, color:'#1e293b'}}>CMC Connect</h1>
-            <span style={{fontSize:'0.8rem', color:'#64748b'}}>Bonjour, {user.prenom}</span>
+            <span style={{fontSize:'0.8rem', color:'#64748b'}}>{t('hello_user', { prenom: user.prenom })}</span>
           </div>
         </div>
 
         <nav style={styles.desktopNav}>
-          <NavItem id="planning" icon={Calendar} label="Planning" />
-          <NavItem id="chat" icon={MessageSquare} label="Messages" />
-          {user.role === 'admin' && <NavItem id="admin" icon={Settings} label="Admin" />}
+          <NavItem id="planning" icon={Calendar} label={t('planning')} />
+          <NavItem id="chat" icon={MessageSquare} label={t('messages_nav')} />
+          {user.role === 'admin' && <NavItem id="admin" icon={Settings} label={t('admin_nav')} />}
         </nav>
 
         <div style={{display:'flex', gap:'10px'}}>
@@ -165,7 +170,7 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                   <div style={styles.statCardMain}>
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start'}}>
                       <div>
-                        <p style={{margin:0, color:'rgba(255,255,255,0.8)', fontSize:'0.85rem'}}>Missions Totales</p>
+                        <p style={{margin:0, color:'rgba(255,255,255,0.8)', fontSize:'0.85rem'}}>{t('total_missions')}</p>
                         <h2 style={{margin:'5px 0', color:'white', fontSize:'2.2rem'}}>{stats.total}</h2>
                       </div>
                       <div style={{background:'rgba(255,255,255,0.2)', padding:'8px', borderRadius:'10px'}}><Calendar color="white"/></div>
@@ -174,12 +179,12 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                     {/* CONTROLES ADMIN (Export + Ramadan) */}
                     <div style={{display:'flex', gap:'10px', marginTop:'20px', flexWrap:'wrap'}}>
                       <button onClick={handleExportReset} style={styles.exportBtn}>
-                        <Download size={16}/> Clôturer Semaine
+                        <Download size={16}/> {t('close_week')}
                       </button>
                       
                       <div style={styles.ramadanToggleContainer}>
                         <Moon size={16} color={ramadanMode ? "#fbbf24" : "rgba(255,255,255,0.7)"} />
-                        <span style={{fontSize:'0.85rem', fontWeight:'600'}}>Ramadan</span>
+                        <span style={{fontSize:'0.85rem', fontWeight:'600'}}>{t('ramadan')}</span>
                         <button onClick={toggleRamadanMode} style={{...styles.toggleBtn, background: ramadanMode ? '#fbbf24' : 'rgba(255,255,255,0.3)'}}>
                           <div style={{...styles.toggleCircle, left: ramadanMode ? '22px' : '2px'}}></div>
                         </button>
@@ -189,7 +194,7 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                   </div>
                   
                   <div style={styles.statCardList}>
-                    <h3 style={{margin:'0 0 10px 0', fontSize:'0.9rem', color:'#475569', fontWeight:'bold'}}>Top Ambassadeurs</h3>
+                    <h3 style={{margin:'0 0 10px 0', fontSize:'0.9rem', color:'#475569', fontWeight:'bold'}}>{t('top_ambassadors')}</h3>
                     <div style={{overflowY:'auto', maxHeight:'120px'}}>
                       {stats.stats.map((s, i) => (
                         <div key={i} style={styles.leaderRow}>
@@ -205,14 +210,20 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
 
               {/* GRID PLANNING */}
               <div style={styles.gridContainer}>
-                {days.map((day) => (
+                {days.map((day, index) => {
+                  // Note: On suppose que tes slots dans MONGODB sont en français ('Lundi', 'Mardi', etc)
+                  // On garde les clés françaises pour la recherche BDD, mais on affiche 'day' (traduit)
+                  const dbDayKeys = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi']; 
+                  const dbDay = dbDayKeys[index];
+
+                  return (
                   <div key={day} style={styles.dayColumn}>
                     <div style={styles.dayHeader}>
                       <span style={{fontWeight:'800', color:'#94a3b8', textTransform:'uppercase', fontSize:'0.75rem', letterSpacing:'1px'}}>{day}</span>
                     </div>
                     <div style={{display:'flex', flexDirection:'column', gap:'12px'}}>
                       {['Matin', 'Apr'].map(period => {
-                        const slot = getSlot(day, period);
+                        const slot = getSlot(dbDay, period);
                         if (!slot) return <div key={period} style={styles.skeletonSlot}></div>;
                         
                         const isFull = slot.ambassadors.length >= 3;
@@ -241,7 +252,7 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
 
                             {/* Liste des inscrits */}
                             <div style={{display:'flex', flexDirection:'column', gap:'8px', marginBottom:'15px', minHeight:'30px'}}>
-                              {slot.ambassadors.length === 0 && <span style={{fontSize:'0.75rem', color:'#cbd5e1', fontStyle:'italic'}}>Aucun inscrit</span>}
+                              {slot.ambassadors.length === 0 && <span style={{fontSize:'0.75rem', color:'#cbd5e1', fontStyle:'italic'}}>{t('no_registered')}</span>}
                               
                               {slot.ambassadors.map((amb) => (
                                 <div key={amb._id} style={{display:'flex', alignItems:'center', gap:'8px', fontSize:'0.8rem', color:'#334155', fontWeight:'500'}}>
@@ -269,9 +280,9 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                                 }}
                               >
                                 {isRegistered ? (
-                                  <><XCircle size={14} style={{marginRight:'5px'}}/> Annuler</>
+                                  <><XCircle size={14} style={{marginRight:'5px'}}/> {t('cancel_btn')}</>
                                 ) : (
-                                  <><CheckCircle size={14} style={{marginRight:'5px'}}/> Rejoindre</>
+                                  <><CheckCircle size={14} style={{marginRight:'5px'}}/> {t('join_btn')}</>
                                 )}
                               </button>
                             )}
@@ -280,7 +291,8 @@ export default function Dashboard({ token, user, onLogout, onUpdateUser }) {
                       })}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           )}

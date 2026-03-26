@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LogIn, Users, ArrowRight, ShieldCheck, Heart, MapPin, CalendarDays, Award, Briefcase, GraduationCap, ChevronRight, ChevronLeft, ArrowUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import CmcAssistant from './CmcAssistant';
+import GlobalLanguageSwitcher from './GlobalLanguageSwitcher'; // <-- IMPORT DU SWITCHER
+
 const SLIDER_IMAGES = [
   "https://res.cloudinary.com/dddxjro92/image/upload/v1772903649/cmc-img_zm0mfj.webp",
   "https://res.cloudinary.com/dddxjro92/image/upload/v1773215648/q9ymst5igpwrrdmcpcpg.jpg",
@@ -32,6 +35,7 @@ const Counter = ({ value, suffix = "" }) => {
 };
 
 export default function LandingPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [ambassadorsCount, setAmbassadorsCount] = useState(0);
 
@@ -68,7 +72,6 @@ export default function LandingPage() {
     const timer = setInterval(() => {
       paginate(1);
     }, 5000);
-    // On nettoie le timer si l'utilisateur change de page manuellement pour éviter les sauts bizarres
     return () => clearInterval(timer);
   }, [page]);
 
@@ -103,20 +106,9 @@ export default function LandingPage() {
 
   // Configurations d'animation du Slider
   const sliderVariants = {
-    enter: (direction) => ({
-      x: direction > 0 ? 1000 : -1000,
-      opacity: 0
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1
-    },
-    exit: (direction) => ({
-      zIndex: 0,
-      x: direction < 0 ? 1000 : -1000,
-      opacity: 0
-    })
+    enter: (direction) => ({ x: direction > 0 ? 1000 : -1000, opacity: 0 }),
+    center: { zIndex: 1, x: 0, opacity: 1 },
+    exit: (direction) => ({ zIndex: 0, x: direction < 0 ? 1000 : -1000, opacity: 0 })
   };
 
   // Sensibilité du swipe (pour le tactile)
@@ -148,12 +140,18 @@ export default function LandingPage() {
             <div className="logo-icon"><Award size={20} color="white" /></div>
             <div className="logo-text">
               <span className="brand-name">CMC-RSK</span>
-              <span className="brand-sub">Ambassadeurs & Clubs</span>
+              <span className="brand-sub">{t('ambassadors_clubs')}</span>
             </div>
           </div>
-          <button className="nav-login-btn hover-scale" onClick={handleLoginClick}>
-            <LogIn size={18} /> <span className="hide-mobile">Espace Membre</span>
-          </button>
+          
+          {/* --- GROUPE D'ACTIONS INTÉGRÉ --- */}
+          <div className="nav-actions">
+            <GlobalLanguageSwitcher />
+            <button className="nav-login-btn hover-scale" onClick={handleLoginClick}>
+              <LogIn size={18} /> <span className="hide-mobile">{t('member_space')}</span>
+            </button>
+          </div>
+
         </div>
       </nav>
 
@@ -164,36 +162,36 @@ export default function LandingPage() {
           <motion.div initial="hidden" animate="visible" variants={staggerContainer} className="hero-text-col">
             
             <motion.div variants={fadeInUp}>
-              <span className="badge-text">✨ Programme d'Excellence {academicYear}</span>
+              <span className="badge-text">✨ {t('excellence_program')} {academicYear}</span>
             </motion.div>
 
             <motion.h1 variants={fadeInUp} className="hero-title">
-              Devenez l'image de <br/>La
-              <span className="text-gradient"> CMC</span>
+              {t('hero_title_1')} <br/>{t('hero_title_2')}
+              <span className="text-gradient"> {t('cmc')}</span>
             </motion.h1>
             
             <motion.p variants={fadeInUp} className="hero-subtitle">
-              Le réseau très sélectif des talents de la<strong> Cité des Métiers et des Compétences RSK.</strong><br/>
-              Représentez l'établissement, développez votre leadership et boostez votre carrière.
+              {t('hero_subtitle_1')}<strong> {t('hero_subtitle_bold')}</strong><br/>
+              {t('hero_subtitle_2')}
             </motion.p>
 
             <motion.div variants={fadeInUp} className="cta-group">
               <button className="primary-cta hover-scale" onClick={handleLoginClick}>
-                Accéder au portail <ArrowRight size={20} />
+                {t('access_portal')} <ArrowRight size={20} />
               </button>
               <button className="secondary-cta hover-scale" onClick={handleCommunityClick}>
-                Voir les Ambassadeurs & Clubs
+                {t('see_ambassadors_clubs')}
               </button>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="stats-group">
               <div className="stat-chip">
                 <Users size={18} color="#3b82f6" />
-                <span className="stat-text"><b><Counter value={ambassadorsCount > 0 ? ambassadorsCount : 25} /></b> Ambassadeurs Actifs</span>
+                <span className="stat-text"><b><Counter value={ambassadorsCount > 0 ? ambassadorsCount : 25} /></b> {t('active_ambassadors')}</span>
               </div>
               <div className="stat-chip">
                 <ShieldCheck size={18} color="#10b981" />
-                <span className="stat-text"><b>100%</b> Engagés</span>
+                <span className="stat-text"><b>100%</b> {t('engaged')}</span>
               </div>
             </motion.div>
           </motion.div>
@@ -227,7 +225,6 @@ export default function LandingPage() {
                 />
               </AnimatePresence>
 
-              {/* Boutons flèches (Fleches) */}
               <button className="slider-btn slider-btn-left" onClick={() => paginate(-1)}>
                 <ChevronLeft size={24} />
               </button>
@@ -235,7 +232,6 @@ export default function LandingPage() {
                 <ChevronRight size={24} />
               </button>
 
-              {/* Points de navigation (Dots) */}
               <div className="slider-dots">
                 {SLIDER_IMAGES.map((_, i) => (
                   <div 
@@ -258,27 +254,27 @@ export default function LandingPage() {
         {/* === SECTION 2 : POURQUOI NOUS REJOINDRE === */}
         <section className="section-padding">
           <div className="section-header">
-            <h2 className="section-title">Un tremplin pour votre <span style={{color: '#3b82f6'}}>carrière</span></h2>
-            <p className="section-subtitle">Être ambassadeur, c'est se forger un profil professionnel unique.</p>
+            <h2 className="section-title">{t('springboard_1')} <span style={{color: '#3b82f6'}}>{t('springboard_2')}</span></h2>
+            <p className="section-subtitle">{t('ambassador_profile_desc')}</p>
           </div>
           
           <div className="benefits-grid">
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="benefit-card">
               <div className="benefit-icon icon-blue"><Briefcase size={28}/></div>
-              <h3 className="benefit-title">Acquisition Des Compétences</h3>
-              <p className="benefit-text">Améliorez votre prise de parole, votre gestion des imprévus et votre relationnel sur le terrain.</p>
+              <h3 className="benefit-title">{t('skill_acquisition')}</h3>
+              <p className="benefit-text">{t('skill_desc')}</p>
             </motion.div>
             
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="benefit-card">
               <div className="benefit-icon icon-orange"><Users size={28}/></div>
-              <h3 className="benefit-title">Réseau Privilégié</h3>
-              <p className="benefit-text">Construisez votre carnet d'adresses en échangeant avec les officiels et formateurs.</p>
+              <h3 className="benefit-title">{t('privileged_network')}</h3>
+              <p className="benefit-text">{t('network_desc')}</p>
             </motion.div>
 
             <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUp} className="benefit-card">
               <div className="benefit-icon icon-green"><GraduationCap size={28}/></div>
-              <h3 className="benefit-title">Attestation Stagiaire Ambassadeur</h3>
-              <p className="benefit-text">Obtenez une reconnaissance officielle qui fera la différence sur votre CV.</p>
+              <h3 className="benefit-title">{t('certificate')}</h3>
+              <p className="benefit-text">{t('certificate_desc')}</p>
             </motion.div>
           </div>
         </section>
@@ -286,36 +282,36 @@ export default function LandingPage() {
         {/* === SECTION 3 : BENTO GRID === */}
         <section className="section-padding" style={{paddingBottom: '100px'}}>
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUp} className="section-header">
-            <h2 className="section-title">Votre rôle !</h2>
-            <p className="section-subtitle">Des responsabilités à forte valeur ajoutée.</p>
+            <h2 className="section-title">{t('your_role')}</h2>
+            <p className="section-subtitle">{t('role_subtitle')}</p>
           </motion.div>
 
           <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="bento-grid">
             
             <motion.div variants={fadeInUp} className="bento-card bento-span-2 bento-white">
               <div className="bento-icon"><MapPin size={24} /></div>
-              <h3 className="bento-title">Accueil des visiteurs</h3>
-              <p className="bento-text">Devenez l'hôte de marque de la CMC-RSK. Guidez les visiteurs, orientez les nouveaux inscrits et représentez l'hospitalité de notre institution lors des événements.</p>
+              <h3 className="bento-title">{t('visitors_welcome')}</h3>
+              <p className="bento-text">{t('visitors_desc')}</p>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="bento-card bento-dark">
               <div className="bento-icon dark-icon"><CalendarDays size={24} /></div>
-              <h3 className="bento-title" style={{color: 'white'}}>Organisation</h3>
-              <p className="bento-text" style={{color: '#94a3b8'}}>Assurez le bon déroulement logistique des forums, séminaires et remises de diplômes.</p>
+              <h3 className="bento-title" style={{color: 'white'}}>{t('organization')}</h3>
+              <p className="bento-text" style={{color: '#94a3b8'}}>{t('organization_desc')}</p>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="bento-card bento-blue">
               <div className="bento-icon"><ShieldCheck size={24} /></div>
-              <h3 className="bento-title">Exemple de conduite</h3>
-              <p className="bento-text">Veillez au respect du règlement intérieur et véhiculez une image disciplinée.</p>
+              <h3 className="bento-title">{t('conduct_example')}</h3>
+              <p className="bento-text">{t('conduct_desc')}</p>
             </motion.div>
 
             <motion.div variants={fadeInUp} className="bento-card bento-span-2 bento-flex">
               <div style={{ flex: 1 }}>
-                <h3 className="bento-title">Curieux de voir qui compose notre réseau ?</h3>
-                <p className="bento-text" style={{marginBottom: '20px'}}>Parcourez notre galerie interactive pour découvrir les profils, les filières et les citations des ambassadeurs qui font la fierté de la CMC-RSK.</p>
+                <h3 className="bento-title">{t('curious_network')}</h3>
+                <p className="bento-text" style={{marginBottom: '20px'}}>{t('gallery_desc')}</p>
                 <button className="link-btn hover-scale" onClick={handleCommunityClick}>
-                  Explorer les profils Ambassadeurs <ChevronRight size={18} />
+                  {t('explore_profiles')} <ChevronRight size={18} />
                 </button>
               </div>
             </motion.div>
@@ -333,7 +329,7 @@ export default function LandingPage() {
             <span style={{ fontWeight: 'bold', fontSize: '1.2rem', color: '#1e293b' }}>CMC-RSK</span>
           </div>
           <p className="footer-text">
-            © {academicYear} Programme Ambassadeurs. Interface conçue et développée par <br/>
+            © {academicYear} {t('footer_text')} <br/>
             <span style={{ color: '#1e293b', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px', marginTop:'5px' }}>
               Mohammed ElMahdi Daifi <Heart size={14} color="#ef4444" fill="#ef4444" /> DEVOWFS-205 (Excellence)
             </span>
@@ -345,7 +341,7 @@ export default function LandingPage() {
       <button 
         className={`scroll-to-top ${showScrollTop ? 'visible' : ''}`} 
         onClick={scrollToTop}
-        title="Retour en haut"
+        title={t('back_to_top')}
       >
         <ArrowUp size={24} />
       </button>
@@ -373,6 +369,10 @@ export default function LandingPage() {
         .logo-text { display: flex; flex-direction: column; }
         .brand-name { font-size: 1.1rem; font-weight: 900; color: #0f172a; line-height: 1.2; }
         .brand-sub { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* CSS DU GROUPE D'ACTIONS DE LA NAVBAR */
+        .nav-actions { display: flex; align-items: center; gap: 15px; }
+
         .nav-login-btn { display: flex; align-items: center; gap: 8px; background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 16px; font-weight: 600; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(15,23,42,0.15); }
 
         .main-content { position: relative; z-index: 10; padding-top: 100px; }
@@ -401,7 +401,6 @@ export default function LandingPage() {
 
         .image-glow { position: absolute; top: 5%; left: 5%; right: 5%; bottom: 10%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); filter: blur(50px); opacity: 0.25; border-radius: 30px; z-index: -1; }
         
-        /* ================= NOUVEAU CSS DU SLIDER ================= */
         .slider-wrapper {
           position: relative;
           width: 100%;
@@ -470,9 +469,7 @@ export default function LandingPage() {
           background: white;
           transform: scale(1.4);
         }
-        /* ================= FIN CSS SLIDER ================= */
 
-        /* Benefits Grid (Mise en page classique, sans scroll horizontal) */
         .benefits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
         .benefit-card { background: white; padding: 40px 30px; border-radius: 24px; border: 1px solid #f1f5f9; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.03); text-align: center; display: flex; flex-direction: column; align-items: center; }
         .benefit-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; }
@@ -482,7 +479,6 @@ export default function LandingPage() {
         .benefit-title { font-size: 1.2rem; font-weight: 800; color: #1e293b; margin: 0 0 10px 0; }
         .benefit-text { font-size: 0.95rem; color: #64748b; line-height: 1.6; margin: 0; }
 
-        /* Bento Grid */
         .bento-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; grid-auto-rows: minmax(220px, auto); }
         .bento-card { border-radius: 24px; padding: 40px; border: 1px solid #f1f5f9; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05); display: flex; flex-direction: column; }
         .bento-white { background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); }
@@ -499,13 +495,11 @@ export default function LandingPage() {
         .link-btn { background: transparent; border: none; color: #3b82f6; font-weight: bold; font-size: 1.05rem; display: flex; align-items: center; gap: 5px; padding: 0; }
         .link-btn:hover { opacity: 0.8; gap: 10px; }
 
-        /* Footer */
         .footer { border-top: 1px solid #e2e8f0; padding: 40px 20px; background: white; }
         .footer-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
         .footer-brand { display: flex; align-items: center; gap: 10px; }
         .footer-text { text-align: right; font-size: 0.85rem; color: #64748b; margin: 0; line-height: 1.6; }
 
-        /* BOUTON SCROLL TO TOP CSS */
         .scroll-to-top {
           position: fixed;
           bottom: 30px;
@@ -537,7 +531,6 @@ export default function LandingPage() {
           transform: translateY(-5px) scale(1.1);
         }
 
-        /* MEDIA QUERIES */
         @media (max-width: 992px) {
           .hero-layout { flex-direction: column; text-align: center; padding-top: 20px; gap: 50px; }
           .hero-img-col { width: 100%; margin-top: 20px; }
@@ -549,6 +542,7 @@ export default function LandingPage() {
 
         @media (max-width: 768px) {
           .hide-mobile { display: none; }
+          .nav-actions { gap: 10px; }
           .hero-title { font-size: 2.2rem; }
           .hero-subtitle { font-size: 1rem; }
           .section-title { font-size: 1.8rem; }
@@ -560,8 +554,6 @@ export default function LandingPage() {
           .bento-card { padding: 25px; }
           .footer-content { flex-direction: column; text-align: center; justify-content: center; }
           .footer-text { text-align: center; }
-          
-          /* Ajustement bouton scroll sur très petit mobile */
           .scroll-to-top { bottom: 20px; right: 20px; width: 45px; height: 45px; }
         }
       `}</style>

@@ -5,8 +5,10 @@ import { X, Save, Camera, User, Lock, Mail, Briefcase, Heart, MessageCircle, Lin
 import { motion } from 'framer-motion';
 import Cropper from 'react-easy-crop';
 import { getCroppedImg } from '../utils/cropImage';
+import { useTranslation } from 'react-i18next'; // <-- NOUVEAU
 
 export default function ProfileModal({ user, targetUser, token, onClose, onUpdateUser }) {
+  const { t } = useTranslation(); // <-- NOUVEAU
   // Si targetUser existe, c'est l'Admin. Sinon, c'est l'utilisateur lui-même.
   const isAdminEditing = !!targetUser; 
   const initialData = isAdminEditing ? targetUser : user;
@@ -66,7 +68,7 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
     if (!isAdminEditing) return; // Sécurité supplémentaire
     const file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5000000) return toast.error("L'image est trop lourde (Max 5MB)");
+    if (file.size > 5000000) return toast.error(t('image_too_heavy'));
 
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -81,7 +83,7 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
   };
 
   const handleCropAndUpload = async () => {
-    const loadToast = toast.loading("Upload de la photo en HD...");
+    const loadToast = toast.loading(t('uploading_hd'));
     try {
       const croppedImageBlob = await getCroppedImg(imageSrc, croppedAreaPixels);
       const data = new FormData();
@@ -92,7 +94,7 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
       const res = await axios.post("https://api.cloudinary.com/v1_1/dddxjro92/image/upload", data);
       
       toast.dismiss(loadToast);
-      toast.success("Photo uploadée et cadrée !");
+      toast.success(t('photo_uploaded'));
       setFormData(prev => ({ ...prev, photo: res.data.secure_url }));
       
       setIsCropping(false);
@@ -101,7 +103,7 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
     } catch (err) {
       console.error(err);
       toast.dismiss(loadToast);
-      toast.error("Erreur lors de l'upload");
+      toast.error(t('upload_error'));
     }
   };
 
@@ -117,15 +119,15 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
       let res;
       if (isAdminEditing) {
         res = await axios.put(`/api/users/admin-update/${initialData._id}`, payload, { headers: { 'x-auth-token': token } });
-        toast.success("Profil mis à jour par l'Admin !");
+        toast.success(t('profile_updated_admin'));
       } else {
         res = await axios.put('/api/users/profile', payload, { headers: { 'x-auth-token': token } });
-        toast.success("Informations mises à jour !");
+        toast.success(t('info_updated'));
       }
       onUpdateUser(res.data);
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.msg || "Erreur sauvegarde profil");
+      toast.error(err.response?.data?.msg || t('profile_save_error'));
     } finally { setLoading(false); }
   };
 
@@ -135,8 +137,8 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
         <button onClick={onClose} style={styles.closeBtn}><X size={24} /></button>
         
         <div style={styles.header}>
-          <h2 style={styles.title}>{isAdminEditing ? `Édition : ${formData.prenom}` : 'Mon Compte'}</h2>
-          <p style={styles.subtitle}>{isAdminEditing ? "Contrôle Admin" : "Informations Personnelles"}</p>
+          <h2 style={styles.title}>{isAdminEditing ? `${t('editing')} ${formData.prenom}` : t('my_account')}</h2>
+          <p style={styles.subtitle}>{isAdminEditing ? t('admin_control') : t('personal_info')}</p>
         </div>
         
         <form onSubmit={handleSubmit} style={styles.form}>
@@ -155,38 +157,38 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
               )}
             </div>
             <p style={{fontSize:'0.75rem', color:'#94a3b8', marginTop:'5px'}}>
-              {isAdminEditing ? "Cliquer pour recadrer une photo" : "Photo gérée par l'administration"}
+              {isAdminEditing ? t('click_crop_photo') : t('photo_managed_admin')}
             </p>
           </div>
 
-          <div style={styles.sectionTitle}>Identité</div>
+          <div style={styles.sectionTitle}>{t('identity')}</div>
           <div style={styles.grid}>
-            <div style={styles.field}><label style={styles.label}><User size={14}/> Prénom</label><input name="prenom" value={formData.prenom} onChange={handleChange} required style={styles.input} /></div>
-            <div style={styles.field}><label style={styles.label}><User size={14}/> Nom</label><input name="nom" value={formData.nom} onChange={handleChange} required style={styles.input} /></div>
+            <div style={styles.field}><label style={styles.label}><User size={14}/> {t('firstname')}</label><input name="prenom" value={formData.prenom} onChange={handleChange} required style={styles.input} /></div>
+            <div style={styles.field}><label style={styles.label}><User size={14}/> {t('lastname')}</label><input name="nom" value={formData.nom} onChange={handleChange} required style={styles.input} /></div>
           </div>
           
           <div style={styles.grid}>
-            <div style={styles.field}><label style={styles.label}><Mail size={14}/> Email</label><input name="email" value={formData.email} onChange={handleChange} required style={styles.input} /></div>
-            <div style={styles.field}><label style={styles.label}><Lock size={14}/> Mot de passe</label><input name="password" type="password" placeholder="Laisser vide pour ne pas changer" value={formData.password} onChange={handleChange} style={styles.input} /></div>
+            <div style={styles.field}><label style={styles.label}><Mail size={14}/> {t('email')}</label><input name="email" value={formData.email} onChange={handleChange} required style={styles.input} /></div>
+            <div style={styles.field}><label style={styles.label}><Lock size={14}/> {t('password')}</label><input name="password" type="password" placeholder={t('leave_empty_password')} value={formData.password} onChange={handleChange} style={styles.input} /></div>
           </div>
 
           {/* LINKEDIN - Modifiable par l'utilisateur */}
           <div style={styles.field}>
-            <label style={styles.label}><Linkedin size={14} color="#0a66c2"/> LinkedIn (URL)</label>
+            <label style={styles.label}><Linkedin size={14} color="#0a66c2"/> {t('linkedin_url')}</label>
             <input name="linkedin" value={formData.linkedin} onChange={handleChange} placeholder="https://linkedin.com/in/..." style={styles.input} />
           </div>
 
-          <div style={styles.sectionTitle}>Détails Complémentaires</div>
+          <div style={styles.sectionTitle}>{t('additional_details')}</div>
           
           {/* FILIÈRE - Modifiable par l'utilisateur ET l'admin */}
           <div style={styles.field}>
-            <label style={styles.label}><Briefcase size={14}/> Filière</label>
-            <input name="branch" value={formData.branch} onChange={handleChange} placeholder="Ex: Développement Digital" style={styles.input} />
+            <label style={styles.label}><Briefcase size={14}/> {t('branch')}</label>
+            <input name="branch" value={formData.branch} onChange={handleChange} placeholder={t('ex_branch')} style={styles.input} />
           </div>
           
           {/* CITATION & HOBBIES - Bloqués si ce n'est pas l'Admin */}
           <div style={styles.field}>
-            <label style={styles.label}><MessageCircle size={14}/> Citation / Motivation</label>
+            <label style={styles.label}><MessageCircle size={14}/> {t('quote_motivation')}</label>
             <textarea 
               name="whyCMC" 
               value={formData.whyCMC} 
@@ -197,7 +199,7 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
           </div>
           
           <div style={styles.field}>
-            <label style={styles.label}><Heart size={14}/> Hobbies</label>
+            <label style={styles.label}><Heart size={14}/> {t('hobbies')}</label>
             <textarea 
               name="hobbies" 
               value={formData.hobbies} 
@@ -207,7 +209,7 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
             />
           </div>
 
-          <button type="submit" style={styles.saveBtn} disabled={loading}>{loading ? 'Sauvegarde...' : <><Save size={18} /> Enregistrer le profil</>}</button>
+          <button type="submit" style={styles.saveBtn} disabled={loading}>{loading ? t('saving') : <><Save size={18} /> {t('save_profile')}</>}</button>
         </form>
       </motion.div>
 
@@ -215,14 +217,14 @@ export default function ProfileModal({ user, targetUser, token, onClose, onUpdat
       {isCropping && (
         <div style={{...styles.overlay, zIndex: 3000}}>
           <div style={{background: 'white', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
-            <h3 style={{fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '15px'}}>Ajuster la photo</h3>
+            <h3 style={{fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '15px'}}>{t('adjust_photo')}</h3>
             <div style={{position: 'relative', width: '100%', height: '300px', background: '#333', borderRadius: '12px', overflow: 'hidden', marginBottom: '15px'}}>
               <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={1} cropShape="round" onCropChange={setCrop} onCropComplete={onCropComplete} onZoomChange={setZoom} />
             </div>
             <input type="range" value={zoom} min={1} max={3} step={0.1} onChange={(e) => setZoom(e.target.value)} style={{width: '100%', marginBottom: '20px'}} />
             <div style={{display: 'flex', gap: '10px', width: '100%'}}>
-              <button onClick={() => { setIsCropping(false); setImageSrc(null); setZoom(1); }} style={{flex: 1, padding: '10px', background: '#e2e8f0', color: '#1e293b', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer'}}>Annuler</button>
-              <button onClick={handleCropAndUpload} style={{flex: 1, padding: '10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer'}}>Valider & Cadrer</button>
+              <button onClick={() => { setIsCropping(false); setImageSrc(null); setZoom(1); }} style={{flex: 1, padding: '10px', background: '#e2e8f0', color: '#1e293b', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer'}}>{t('cancel')}</button>
+              <button onClick={handleCropAndUpload} style={{flex: 1, padding: '10px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer'}}>{t('validate_crop')}</button>
             </div>
           </div>
         </div>

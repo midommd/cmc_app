@@ -5,10 +5,11 @@ import { Send, Users, ArrowLeft, X, Trash2, Smile, MoreVertical, Edit2, EyeOff, 
 import toast from 'react-hot-toast';
 import EmojiPicker from 'emoji-picker-react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
+import { useTranslation } from 'react-i18next'; // <-- NOUVEAU
 
-// --- FONCTION FORMATAGE DERNIÈRE CONNEXION ---
-const formatLastSeen = (dateString) => {
-  if (!dateString) return "Hors ligne";
+// --- FONCTION FORMATAGE DERNIÈRE CONNEXION (Adaptée avec t) ---
+const formatLastSeen = (dateString, t) => {
+  if (!dateString) return t('offline');
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now - date;
@@ -16,28 +17,28 @@ const formatLastSeen = (dateString) => {
   const diffHours = Math.floor(diffMins / 60);
   const diffDays = Math.floor(diffHours / 24);
 
-  if (diffMins < 2) return "Hors ligne (À l'instant)";
-  if (diffMins < 60) return `Hors ligne (il y a ${diffMins} min)`;
-  if (diffHours < 24) return `Hors ligne (il y a ${diffHours} h)`;
-  if (diffDays === 1) return `Hors ligne (hier)`;
-  return `Hors ligne (le ${date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})`;
+  if (diffMins < 2) return t('offline_just_now');
+  if (diffMins < 60) return t('offline_mins_ago', { count: diffMins });
+  if (diffHours < 24) return t('offline_hours_ago', { count: diffHours });
+  if (diffDays === 1) return t('offline_yesterday');
+  return t('offline_date', { date: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) });
 };
 
-// --- FONCTION FORMATAGE DATE POUR SÉPARATEURS ---
-const formatDateSeparator = (dateString) => {
+// --- FONCTION FORMATAGE DATE POUR SÉPARATEURS (Adaptée avec t) ---
+const formatDateSeparator = (dateString, t) => {
   const date = new Date(dateString);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (date.toDateString() === today.toDateString()) return "Aujourd'hui";
-  if (date.toDateString() === yesterday.toDateString()) return "Hier";
+  if (date.toDateString() === today.toDateString()) return t('today');
+  if (date.toDateString() === yesterday.toDateString()) return t('yesterday');
   
   return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 };
 
 // --- MESSAGE BUBBLE AVEC SWIPE & MENU FIXE ---
-const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onAction, onReply }) => {
+const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onAction, onReply, t }) => { // <-- t ajouté en prop
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
   const controls = useAnimation(); 
@@ -110,7 +111,7 @@ const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onActio
 
             {message.isDeletedForAll ? (
               <span style={{fontStyle:'italic', opacity:0.6, display:'flex', alignItems:'center', gap:'5px', color: isOwn ? 'rgba(255,255,255,0.7)' : '#64748b'}}>
-                <EyeOff size={14}/> Message supprimé
+                <EyeOff size={14}/> {t('message_deleted_tag')}
               </span>
             ) : (
               <span style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: '1.4'}}>{message.text}</span>
@@ -120,7 +121,7 @@ const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onActio
               fontSize:'0.65rem', opacity:0.7, marginTop:'4px', 
               textAlign:'right', display:'flex', justifyContent:'flex-end', gap:'4px', alignItems:'center'
             }}>
-              {message.isEdited && !message.isDeletedForAll && <span>(modifié)</span>}
+              {message.isEdited && !message.isDeletedForAll && <span>{t('edited_tag')}</span>}
               {new Date(message.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
             </div>
           </div>
@@ -162,15 +163,15 @@ const MessageBubble = React.memo(({ message, isOwn, senderInfo, isGroup, onActio
                   border: '1px solid #f1f5f9'
                 }}
               >
-                <button onClick={() => {onReply(message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Reply size={14} color="#2563eb"/> Répondre</button>
+                <button onClick={() => {onReply(message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Reply size={14} color="#2563eb"/> {t('action_reply')}</button>
                 {isOwn && (
                   <>
-                    <button onClick={() => {onAction('edit', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Edit2 size={14} color="#2563eb"/> Modifier</button>
-                    <button onClick={() => {onAction('deleteAll', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Users size={14} color="#ef4444"/> Suppr. pour tous</button>
+                    <button onClick={() => {onAction('edit', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Edit2 size={14} color="#2563eb"/> {t('action_edit')}</button>
+                    <button onClick={() => {onAction('deleteAll', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Users size={14} color="#ef4444"/> {t('action_delete_all')}</button>
                   </>
                 )}
-                <button onClick={() => {onAction('deleteMe', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Trash2 size={14} color="#ef4444"/> Suppr. pour moi</button>
-                <button onClick={() => {navigator.clipboard.writeText(message.text); setShowMenu(false)}} style={bubbleStyles.menuItem}><Copy size={14} color="#64748b"/> Copier</button>
+                <button onClick={() => {onAction('deleteMe', message); setShowMenu(false)}} style={bubbleStyles.menuItem}><Trash2 size={14} color="#ef4444"/> {t('action_delete_me')}</button>
+                <button onClick={() => {navigator.clipboard.writeText(message.text); setShowMenu(false)}} style={bubbleStyles.menuItem}><Copy size={14} color="#64748b"/> {t('action_copy')}</button>
               </motion.div>
             )}
           </AnimatePresence>
@@ -198,6 +199,7 @@ const bubbleStyles = {
 };
 
 export default function ChatSystem({ user, token }) {
+  const { t } = useTranslation(); // <-- NOUVEAU
   const currentUserId = user.id || user._id;
 
   const [conversations, setConversations] = useState([]);
@@ -257,7 +259,7 @@ export default function ChatSystem({ user, token }) {
     return outputArray;
   }
 
- async function registerPush(token) {
+  async function registerPush(token) {
     try {
       const baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
       const resKey = await axios.get(`${baseURL}/api/vapid-public-key`);
@@ -354,7 +356,7 @@ export default function ChatSystem({ user, token }) {
 
     socket.current.on("messageDeleted", (data) => {
       if (currentChatRef.current?._id === data.conversationId) {
-        setMessages(prev => prev.map(m => m._id === data.messageId ? { ...m, isDeletedForAll: true, text: "Message supprimé" } : m));
+        setMessages(prev => prev.map(m => m._id === data.messageId ? { ...m, isDeletedForAll: true, text: "Message supprimé" } : m)); // Le 't' sera appliqué à l'affichage
       }
       setLastMessages(prev => ({ ...prev, [data.conversationId]: "Message supprimé" }));
     });
@@ -392,28 +394,26 @@ export default function ChatSystem({ user, token }) {
   }, [currentUserId, token]);
 
   // --- LE RÉCUPÉRATEUR SILENCIEUX DE MESSAGES ---
-  // Si le backend n'envoie pas le lastMessage, on le récupère en fond pour éviter d'afficher "Nouvelle conversation"
   useEffect(() => {
     if (conversations.length === 0) return;
     conversations.forEach(async (c) => {
-      // Si on n'a aucune trace de ce message ni en cache, ni dans la payload du backend
       if (!lastMessages[c._id] && !c.lastMessage && !c.latestMessage) {
         try {
           const res = await axios.get(`/api/chat/message/${c._id}`);
           if (res.data && res.data.length > 0) {
             const text = res.data[res.data.length - 1].text;
             setLastMessages(prev => {
-              if (prev[c._id]) return prev; // Ne pas écraser s'il a été mis à jour entre temps
+              if (prev[c._id]) return prev; 
               return { ...prev, [c._id]: text };
             });
           } else {
-            setLastMessages(prev => ({ ...prev, [c._id]: "Nouvelle conversation" })); // Vraiment vide
+            setLastMessages(prev => ({ ...prev, [c._id]: t('new_conversation') })); 
           }
         } catch(err) {}
       }
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conversations]);
+  }, [conversations, t]);
 
   useEffect(() => {
     const getMessages = async () => {
@@ -461,7 +461,6 @@ export default function ChatSystem({ user, token }) {
     setNewMessage(e.target.value);
     
     if (currentChat) {
-      // Pour s'assurer que ça marche avec tous types de backends, on envoie les deux formats (array et string)
       const receivers = currentChat.members.filter(m => String(m) !== String(currentUserId));
       const receiverId = receivers[0]; 
       
@@ -497,8 +496,8 @@ export default function ChatSystem({ user, token }) {
             setLastMessages(prev => ({ ...prev, [currentChat._id]: newMessage }));
             setEditingMessage(null);
             setNewMessage("");
-            toast.success("Modifié");
-        } catch(err) { toast.error("Erreur"); }
+            toast.success(t('toast_edited'));
+        } catch(err) { toast.error(t('toast_error')); }
         return;
     }
 
@@ -547,13 +546,13 @@ export default function ChatSystem({ user, token }) {
     if (action === 'deleteAll') {
         const receivers = currentChat.members.filter(m => String(m) !== String(currentUserId));
         socket.current.emit("deleteMessage", { messageId: msg._id, receivers, conversationId: currentChat._id });
-        setMessages(prev => prev.map(m => m._id === msg._id ? { ...m, isDeletedForAll: true, text: "Message supprimé" } : m));
-        setLastMessages(prev => ({ ...prev, [currentChat._id]: "Message supprimé" }));
+        setMessages(prev => prev.map(m => m._id === msg._id ? { ...m, isDeletedForAll: true, text: t('message_deleted_tag') } : m));
+        setLastMessages(prev => ({ ...prev, [currentChat._id]: t('message_deleted_tag') }));
         await axios.put(`/api/chat/message/delete/${msg._id}`, { userId: currentUserId, type: 'all' });
     }
     if (action === 'edit') {
         const diff = (Date.now() - new Date(msg.createdAt).getTime()) / 1000 / 60;
-        if (diff > 15) { toast.error("Trop tard pour modifier (>15min)"); return; }
+        if (diff > 15) { toast.error(t('toast_too_late_edit')); return; }
         setEditingMessage(msg);
         setNewMessage(msg.text);
         inputRef.current?.focus();
@@ -578,24 +577,24 @@ export default function ChatSystem({ user, token }) {
   };
 
   const handleCreateGroup = async () => {
-    if(!groupName || selectedMembers.length < 2) { toast.error("Nom et 2 membres min requis"); return; }
+    if(!groupName || selectedMembers.length < 2) { toast.error(t('toast_group_req')); return; }
     const members = [currentUserId, ...selectedMembers];
     try {
       const res = await axios.post("/api/chat/conversation", { isGroup: true, name: groupName, admin: currentUserId, members });
       setConversations(prev => [res.data, ...prev]);
       setShowGroupModal(false); setGroupName(""); setSelectedMembers([]);
-      toast.success("Groupe créé !");
-    } catch(err) { toast.error("Erreur création"); }
+      toast.success(t('toast_group_created'));
+    } catch(err) { toast.error(t('toast_create_error')); }
   };
 
   const handleDeleteChat = async () => {
-    if(!currentChat || !window.confirm("Supprimer cette conversation ?")) return;
+    if(!currentChat || !window.confirm(t('confirm_delete_chat'))) return;
     try {
       await axios.delete(`/api/chat/conversation/${currentChat._id}`);
       setConversations(prev => prev.filter(c => c._id !== currentChat._id));
       setCurrentChat(null);
-      toast.success("Supprimé");
-    } catch (err) { toast.error("Erreur"); }
+      toast.success(t('toast_deleted'));
+    } catch (err) { toast.error(t('toast_error')); }
   };
 
   const toggleMemberSelection = (id) => {
@@ -607,7 +606,7 @@ export default function ChatSystem({ user, token }) {
     if (c.isGroup) return { name: c.name, photo: null, isGroup: true, id: c._id };
     const friendId = c.members.find((m) => String(m) !== String(currentUserId));
     const friend = allUsers.find((u) => u._id === friendId);
-    if (!friend) return { name: "Chargement...", photo: null, isGroup: false, id: null };
+    if (!friend) return { name: "...", photo: null, isGroup: false, id: null };
     return { 
       name: `${friend.prenom} ${friend.nom}`, 
       photo: friend.photo, 
@@ -624,7 +623,8 @@ export default function ChatSystem({ user, token }) {
           {onlineUsers.includes(u._id) && <div style={styles.onlineBadgeSmall}></div>}
       </div>
     ));
-  }, [allUsers, currentUserId, conversations, onlineUsers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allUsers, currentUserId, onlineUsers]);
 
   const filteredConversations = conversations.filter(c => 
     getChatInfo(c).name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -640,9 +640,9 @@ export default function ChatSystem({ user, token }) {
       <div className={`chat-menu ${currentChat ? 'mobile-hidden' : ''}`} style={styles.chatMenu}>
         
         <div style={styles.sidebarHeader}>
-          <h3 style={{margin:0, fontSize: '1.4rem', fontWeight: '800', color: '#0f172a'}}>Messages</h3>
+          <h3 style={{margin:0, fontSize: '1.4rem', fontWeight: '800', color: '#0f172a'}}>{t('messages_title')}</h3>
           {user.role === 'admin' && (
-            <button onClick={() => setShowGroupModal(true)} style={styles.groupBtn} title="Nouveau groupe"><Users size={18}/></button>
+            <button onClick={() => setShowGroupModal(true)} style={styles.groupBtn} title={t('new_group_title')}><Users size={18}/></button>
           )}
         </div>
 
@@ -652,7 +652,7 @@ export default function ChatSystem({ user, token }) {
             <Search size={16} color="#94a3b8" style={{marginRight: '8px'}} />
             <input 
               type="text" 
-              placeholder="Rechercher..." 
+              placeholder={t('search_placeholder')} 
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
               style={{border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem'}}
@@ -661,14 +661,16 @@ export default function ChatSystem({ user, token }) {
         </div>
 
         <div style={{overflowY:'auto', flex:1, paddingRight: '5px'}} className="custom-scrollbar">
-            {filteredConversations.length === 0 && <p style={{textAlign:'center', color:'#94a3b8', fontSize:'0.9rem', marginTop:'20px'}}>Aucun résultat</p>}
+            {filteredConversations.length === 0 && <p style={{textAlign:'center', color:'#94a3b8', fontSize:'0.9rem', marginTop:'20px'}}>{t('no_results')}</p>}
             {filteredConversations.map((c) => {
               const info = getChatInfo(c);
               
-              // Affichage parfait de l'aperçu du message sans l'oublier
-              const previewText = lastMessages[c._id] || c.lastMessage?.text || c.lastMessage || c.latestMessage?.text || "Nouvelle conversation";
+              // Affichage parfait de l'aperçu du message
+              let previewText = lastMessages[c._id] || c.lastMessage?.text || c.lastMessage || c.latestMessage?.text || t('new_conversation');
+              if (previewText === "Message supprimé" || previewText === "Deleted message" || previewText === "تم حذف الرسالة") {
+                 previewText = t('message_deleted_tag');
+              }
               const unreadCount = unreadMap[c._id] || c.unreadCount || 0;
-              
               const isOnline = onlineUsers.includes(info.id);
 
               return (
@@ -688,7 +690,7 @@ export default function ChatSystem({ user, token }) {
                             fontSize:'0.8rem', color: unreadCount > 0 || typingUsers[c._id] ? '#3b82f6' : '#64748b', 
                             whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', fontWeight: unreadCount > 0 ? '600' : 'normal'
                         }}>
-                            {typingUsers[c._id] ? <span style={{fontStyle:'italic'}}>En train d'écrire...</span> : previewText}
+                            {typingUsers[c._id] ? <span style={{fontStyle:'italic'}}>{t('typing')}</span> : previewText}
                         </div>
                     </div>
                 </div>
@@ -697,7 +699,7 @@ export default function ChatSystem({ user, token }) {
         </div>
         
         <div style={{padding:'15px', borderTop:'1px solid #f1f5f9', background: '#fafafa'}}>
-            <small style={{color:'#64748b', fontWeight:'700', textTransform:'uppercase', fontSize:'0.7rem', display:'block', marginBottom:'10px', letterSpacing:'0.5px'}}>Commencer à discuter</small>
+            <small style={{color:'#64748b', fontWeight:'700', textTransform:'uppercase', fontSize:'0.7rem', display:'block', marginBottom:'10px', letterSpacing:'0.5px'}}>{t('start_chatting')}</small>
             <div style={{display:'flex', gap:'12px', overflowX:'auto', paddingBottom:'5px'}} className="custom-scrollbar-x">
                 {quickContactsList}
             </div>
@@ -725,12 +727,12 @@ export default function ChatSystem({ user, token }) {
                     
                     <span style={{fontSize:'0.75rem', fontWeight: '500', color: typingUsers[currentChat._id] ? '#2563eb' : isCurrentChatOnline ? '#10b981' : '#94a3b8'}}>
                       {currentChat.isGroup 
-                        ? `${currentChat.members.length} membres` 
+                        ? `${currentChat.members.length} ${t('members_count')}` 
                         : typingUsers[currentChat._id]
-                          ? "En train d'écrire..."
+                          ? t('typing')
                           : isCurrentChatOnline
-                            ? "En ligne"
-                            : formatLastSeen(currentChatInfo.lastActive)
+                            ? t('online')
+                            : formatLastSeen(currentChatInfo.lastActive, t)
                       }
                     </span>
                   </div>
@@ -752,14 +754,14 @@ export default function ChatSystem({ user, token }) {
                       {showDate && (
                         <div style={{display:'flex', justifyContent:'center', margin:'20px 0'}}>
                           <span style={{background:'rgba(0,0,0,0.05)', color:'#64748b', fontSize:'0.75rem', fontWeight:'bold', padding:'6px 12px', borderRadius:'20px', textTransform:'capitalize'}}>
-                            {formatDateSeparator(m.createdAt)}
+                            {formatDateSeparator(m.createdAt, t)}
                           </span>
                         </div>
                       )}
                       
                       <MessageBubble 
                         message={m} isOwn={m.sender === currentUserId} senderInfo={getSenderInfo(m.sender)} 
-                        isGroup={currentChat.isGroup} onAction={handleMessageAction} onReply={handleReply} 
+                        isGroup={currentChat.isGroup} onAction={handleMessageAction} onReply={handleReply} t={t}
                       />
                     </React.Fragment>
                   );
@@ -777,7 +779,7 @@ export default function ChatSystem({ user, token }) {
                   onClick={scrollToBottom}
                   style={{position:'absolute', bottom:'85px', right:'20px', background:'#2563eb', color:'white', border:'none', padding:'10px 15px', borderRadius:'25px', display:'flex', alignItems:'center', gap:'8px', fontWeight:'bold', fontSize:'0.85rem', boxShadow:'0 4px 15px rgba(37,99,235,0.4)', cursor:'pointer', zIndex:50}}
                 >
-                  <ChevronDown size={16} /> {unreadScrollCount} Nouveau{unreadScrollCount > 1 ? 'x' : ''} message{unreadScrollCount > 1 ? 's' : ''}
+                  <ChevronDown size={16} /> {unreadScrollCount} {t('new_messages_count')}
                 </motion.button>
               )}
             </AnimatePresence>
@@ -790,7 +792,7 @@ export default function ChatSystem({ user, token }) {
                   style={{background:'#f8fafc', padding:'10px 15px', borderLeft:'4px solid #2563eb', display:'flex', justifyContent:'space-between', alignItems:'center', margin:'10px 10px 0 10px', borderRadius:'8px'}}
                 >
                   <div style={{fontSize:'0.85rem', color:'#334155', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'90%'}}>
-                    <strong style={{color:'#2563eb', display:'block', fontSize:'0.75rem', marginBottom:'2px'}}>Réponse à un message</strong>
+                    <strong style={{color:'#2563eb', display:'block', fontSize:'0.75rem', marginBottom:'2px'}}>{t('replying_to')}</strong>
                     {replyingTo.text}
                   </div>
                   <button onClick={() => setReplyingTo(null)} style={{background:'none', border:'none', cursor:'pointer', color:'#94a3b8'}}><X size={18}/></button>
@@ -809,7 +811,7 @@ export default function ChatSystem({ user, token }) {
                 <input 
                   ref={inputRef}
                   style={styles.chatInput} 
-                  placeholder={editingMessage ? "Modifier le message..." : "Écrivez votre message..."} 
+                  placeholder={editingMessage ? t('edit_message_placeholder') : t('type_message_placeholder')} 
                   onChange={handleInputChange} value={newMessage}
                   onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)} onFocus={() => setShowEmoji(false)} 
                 />
@@ -825,8 +827,8 @@ export default function ChatSystem({ user, token }) {
             <div style={{width:'80px', height:'80px', borderRadius:'50%', background:'#eff6ff', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:'20px'}}>
               <Users size={40} color="#2563eb" />
             </div>
-            <h3 style={{color:'#1e293b', fontSize:'1.5rem', margin:'0 0 10px 0'}}>Bienvenue sur le Chat</h3>
-            <p style={{color:'#64748b', margin:0}}>Sélectionnez une conversation pour commencer à discuter avec la communauté.</p>
+            <h3 style={{color:'#1e293b', fontSize:'1.5rem', margin:'0 0 10px 0'}}>{t('welcome_chat')}</h3>
+            <p style={{color:'#64748b', margin:0}}>{t('select_conversation_prompt')}</p>
           </div>
         )}
       </div>
@@ -835,10 +837,10 @@ export default function ChatSystem({ user, token }) {
         <div style={styles.modalOverlay}>
           <div style={styles.modalContent}>
             <div style={{display:'flex', justifyContent:'space-between', marginBottom:'15px'}}>
-              <h3>Nouveau Groupe</h3>
+              <h3>{t('new_group_modal_title')}</h3>
               <button onClick={() => setShowGroupModal(false)} style={{background:'none', border:'none', cursor:'pointer'}}><X size={20}/></button>
             </div>
-            <input style={styles.modalInput} placeholder="Nom du groupe..." value={groupName} onChange={(e) => setGroupName(e.target.value)} />
+            <input style={styles.modalInput} placeholder={t('group_name_placeholder')} value={groupName} onChange={(e) => setGroupName(e.target.value)} />
             <div style={{maxHeight:'200px', overflowY:'auto', margin:'15px 0', border:'1px solid #eee', borderRadius:'8px'}}>
               {allUsers.filter(u => u._id !== currentUserId).map(u => (
                 <div key={u._id} onClick={() => toggleMemberSelection(u._id)} style={{padding:'10px', display:'flex', alignItems:'center', gap:'10px', cursor:'pointer', background: selectedMembers.includes(u._id) ? '#eff6ff' : 'white'}}>
@@ -848,7 +850,7 @@ export default function ChatSystem({ user, token }) {
                 </div>
               ))}
             </div>
-            <button onClick={handleCreateGroup} style={styles.createBtn}>Créer le groupe</button>
+            <button onClick={handleCreateGroup} style={styles.createBtn}>{t('create_group_btn')}</button>
           </div>
         </div>
       )}

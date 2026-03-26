@@ -2,20 +2,29 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X, Send, User, ChevronRight, MessageSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next'; // <-- TRADUCTION
 
 export default function CmcAssistant() {
+  const { t, i18n } = useTranslation(); // <-- TRADUCTION
+  
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { text: "Bonjour. Je suis l'assistant IA de la CMC RSK. Comment puis-je vous aider aujourd'hui ?", isBot: true }
-  ]);
+  const [messages, setMessages] = useState([]); // Vide au départ pour forcer la langue
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Ce useEffect met la bonne phrase d'accueil selon la langue choisie
+  useEffect(() => {
+    if (messages.length <= 1) {
+      setMessages([{ text: t('bot_welcome'), isBot: true }]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [i18n.language, t]);
+
   const suggestions = [
-    "Les 79 filières ?",
-    "Rôle des Ambassadeurs ?",
-    "Services du COP ?"
+    t('sug_branches'),
+    t('sug_ambassadors'),
+    t('sug_cop')
   ];
 
   const scrollToBottom = () => {
@@ -36,12 +45,15 @@ export default function CmcAssistant() {
 
     try {
       const baseURL = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:5000';
-      const res = await axios.post(`${baseURL}/api/bot/ask`, { message: userText });
+      const res = await axios.post(`${baseURL}/api/bot/ask`, { 
+        message: userText,
+        language: i18n.language || 'fr' // <-- On envoie la langue au backend !
+      });
       
       setMessages(prev => [...prev, { text: res.data.reply, isBot: true }]);
     } catch (err) {
       console.error("Erreur Nova AI:", err);
-      setMessages(prev => [...prev, { text: "Le service est temporairement indisponible. Veuillez réessayer.", isBot: true }]);
+      setMessages(prev => [...prev, { text: t('bot_error'), isBot: true }]);
     } finally {
       setIsTyping(false);
     }
@@ -89,9 +101,9 @@ export default function CmcAssistant() {
                     <Sparkles size={20} color="#2563eb" />
                   </div>
                   <div>
-                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: '700' }}>Assistant CMC</h3>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#0f172a', fontWeight: '700' }}>{t('assistant_name')}</h3>
                     <span style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
-                      <span style={styles.onlineDot}></span> En ligne
+                      <span style={styles.onlineDot}></span> {t('online')}
                     </span>
                   </div>
                 </div>
@@ -143,7 +155,7 @@ export default function CmcAssistant() {
                 <div style={styles.inputBox}>
                   <input 
                     style={styles.input}
-                    placeholder="Posez votre question..."
+                    placeholder={t('ask_question')}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSend()}

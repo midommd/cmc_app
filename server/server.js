@@ -177,26 +177,33 @@ const auth = (req, res, next) => {
   try { const decoded = jwt.verify(token, process.env.JWT_SECRET); req.user = decoded; next(); } 
   catch (e) { res.status(400).json({ msg: 'Invalid Token' }); }
 };
+
 // ==========================================
-// ROUTE DU CHATBOT IA OFFICIEL (GEMINI 2.5 FLASH)
+// ROUTE DU CHATBOT IA OFFICIEL (GEMINI 2.5 FLASH) MULTILINGUE
 // ==========================================
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 app.post('/api/bot/ask', async (req, res) => {
   try {
-    const { message } = req.body;
+    // <-- MODIFICATION ICI : On récupère la langue (par défaut 'fr')
+    const { message, language = 'fr' } = req.body;
     
     if (!process.env.GEMINI_API_KEY) {
       return res.json({ reply: "L'API Key de l'IA est manquante dans le serveur." });
     }
 
-    // ON UTILISE LE MODÈLE QUE TU AS DEMANDÉ : 2.5 FLASH
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
+
+    // <-- MODIFICATION ICI : On force l'IA à répondre dans la bonne langue
+    const targetLang = language === 'ar' ? 'Arabe (en utilisant obligatoirement l\'alphabet arabe)' : language === 'en' ? 'Anglais' : 'Français';
 
     const promptContext = `
       Tu es "Nova", l'intelligence artificielle officielle et le noyau cognitif de la Cité des Métiers et des Compétences (CMC) de la région Rabat-Salé-Kénitra (RSK), située à Tamesna.
       
+      RÈGLE D'OR ABSOLUE : Tu dois IMPÉRATIVEMENT formuler ta réponse en ${targetLang}. 
+      Même si la question de l'utilisateur contient des mots dans une autre langue, ta réponse finale doit être à 100% en ${targetLang}.
+
       TON AUDIENCE ET TON TON :
       Ton audience est très large. Tu parles à des étudiants, mais aussi à de hauts responsables.
       - Si la question semble venir d'un étudiant (langage familier, questions sur les clubs), sois chaleureux, dynamique et utilise des emojis.
@@ -224,7 +231,6 @@ app.post('/api/bot/ask', async (req, res) => {
       Ta réponse :
     `;
 
-    // Appel à l'IA
     const result = await model.generateContent(promptContext);
     const responseText = result.response.text();
 
@@ -266,7 +272,86 @@ app.post('/api/auth/login', async (req, res) => {
 
 app.use('/api/users', require('./routes/users'));
 app.use('/api/chat', require('./routes/chat'));
+// ==========================================
+// 1. NOUVEAUX MODÈLES MONGODB POUR LES CLUBS
+// ==========================================
+const ClubEventSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  club: { type: String, required: true }, // ex: "Sportif"
+  sousClub: { type: String, required: true }, // ex: "Echecs"
+  date: { type: Date, required: true },
+  type: { type: String, enum: ['session_normale', 'tournoi', 'reunion', 'grand_evenement'] },
+  metrics: {
+    attendance: { type: Number, default: 0 },
+    gamesPlayed: { type: Number, default: 0 }, 
+    notes: { type: String }
+  },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+}, { timestamps: true });
 
+const ClubEvent = mongoose.model('ClubEvent', ClubEventSchema);
+
+// (Assure-toi que ton modèle User dans /models/User.js a bien ces champs :)
+// role: { type: String, enum: ['admin', 'ambassadeur', 'president', 'responsable', 'membre'] }
+// club: { type: String } // ex: "Sportif"
+// sousClub: { type: String } // ex: "Echecs"
+
+// ==========================================
+// 2. ROUTES POUR L'ADMIN (Ajouter un membre & Voir le calendrier)
+// ==========================================
+
+// Route pour l'Admin : Créer un membre de club avec un rôle spécifique
+app.post('/api/clubs/add-member', auth, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ msg: "Accès refusé" });
+  try {
+    const { nom, prenom, email, password, role, club, sousClub } = req.body;
+    
+    // Vérifier si l'email existe
+    let user = await User.findOne({ email });
+    if (user) return res.status(400).json({ msg: "Cet email existe déjà" });
+
+    // Hasher le mot de passe
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    user = new User({ nom, prenom, email, password: hashedPassword, role, club, sousClub });
+    await user.save();
+    
+    res.json({ msg: "Membre ajouté avec succès", user });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Erreur serveur");
+  }
+});
+
+// Route pour récupérer tous les événements pour le Calendrier Annuel
+app.get('/api/clubs/events', auth, async (req, res) => {
+  try {
+    // Si c'est un responsable, on ne lui renvoie que les events de son sous-club
+    let query = {};
+    if (req.user.role === 'responsable') query = { sousClub: req.user.sousClub };
+    if (req.user.role === 'president') query = { club: req.user.club };
+    
+    const events = await ClubEvent.find(query).populate('createdBy', 'nom prenom').sort({ date: 1 });
+    res.json(events);
+  } catch (err) {
+    res.status(500).send("Erreur serveur");
+  }
+});
+
+// Route pour les Présidents/Responsables : Créer un événement/session
+app.post('/api/clubs/events', auth, async (req, res) => {
+  try {
+    const { title, club, sousClub, date, type, metrics } = req.body;
+    const newEvent = new ClubEvent({
+      title, club, sousClub, date, type, metrics, createdBy: req.user.id
+    });
+    await newEvent.save();
+    res.json(newEvent);
+  } catch (err) {
+    res.status(500).send("Erreur création événement");
+  }
+});
 
 // --- ROUTES SETTINGS (MODE RAMADAN) ---
 app.get('/api/settings', async (req, res) => {

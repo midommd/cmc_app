@@ -5,7 +5,15 @@ const UserSchema = new mongoose.Schema({
   prenom: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['admin', 'ambassadeur'], default: 'ambassadeur' },
+  role: { 
+    type: String, 
+    enum: ['admin', 'ambassadeur', 'president_club', 'responsable_sous_club', 'membre'],
+    default: 'membre' 
+  },
+  clubInfo: {
+    poleName: { type: String, default: null }, // ex: "Pôle Sportif"
+    sousClubName: { type: String, default: null } // ex: "Échecs"
+  },
   photo: { type: String, default: "" },
   branch: { type: String, default: "" },
   motivation: { type: String, default: "" },
